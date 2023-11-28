@@ -2,7 +2,7 @@
   "moderator_id": "required",
   "ref_id": "required",
   "user_id": "required",
-  "is_ordered_items": "required",
+  "is_in_order": "required",
   "sequence": [
     {
       "step": "required",

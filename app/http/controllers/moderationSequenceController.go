@@ -64,8 +64,8 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			return err
 		}
 
-		if moderationSequence["is_current"] == false {
-			return errors.New("moderation sequence is not current")
+		if fmt.Sprintf("%v", moderationSequence["result"]) != fmt.Sprintf("%v", app_constant.Pending) {
+			return errors.New("result must be pending")
 		}
 
 		moderationSequenceUser := make(map[string]any)
@@ -83,13 +83,13 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			return err
 		}
 
-		if fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Approve) ||
-			fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Reject) {
-			return errors.New("Moderation is already finished")
+		if moderation["step_current"] != moderationSequence["step"] && fmt.Sprintf("%v", moderation["is_in_order"]) == fmt.Sprintf("%v", 1) {
+			return errors.New("Moderation sequence is not current")
 		}
 
-		if moderation["step_current"] != moderationSequence["step"] {
-			return errors.New("Moderation sequence is not current")
+		if fmt.Sprintf("%v", moderation["result"]) == fmt.Sprintf("%v", app_constant.Approve) ||
+			fmt.Sprintf("%v", moderation["result"]) == fmt.Sprintf("%v", app_constant.Reject) {
+			return errors.New("Moderation is already finished")
 		}
 
 		if err := tx.Table(ctrl.PrefixSingularName+"_sequences").Where("id = ?", moderationSequence["id"]).Updates(&moderationSequence).Error; err != nil {
@@ -98,7 +98,12 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 		moderation["last_moderation_sequence_id"] = moderationSequence["id"]
 		if fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Approve) {
-			if moderationSequence["step"] == moderation["step_total"] {
+			unModeratedSequences := make([]map[string]any, 0)
+			if err := tx.Table(ctrl.PrefixSingularName+"_sequences").Where("moderation_id = ?", moderation["id"]).Where("result = ?", app_constant.Pending).Where("id != ?", moderationSequence["id"]).Find(&unModeratedSequences).Error; err != nil {
+				return err
+			}
+
+			if len(unModeratedSequences) == 0 {
 				moderation["status"] = app_constant.Approve
 			} else {
 				// convert moderationSequence["step"] to int and add 1

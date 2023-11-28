@@ -61,7 +61,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		createModeration["requested_by"] = transformer["moderator_id"]
 		createModeration["step_current"] = 1
 		createModeration["step_total"] = len(transformer["sequence"].([]any))
-		createModeration["is_ordered_items"] = transformer["is_ordered_items"]
+		createModeration["is_in_order"] = transformer["is_in_order"]
 		createModeration["uuid"] = uuid.New().String()
 		createModeration["status"] = 100
 
@@ -78,7 +78,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 				createModerationSequence["moderation_id"] = moderation["id"]
 				createModerationSequence["moderator_id"] = transformer["moderator_id"]
 				createModerationSequence["step"] = i + 1
-				createModeration["result"] = 100
+				createModerationSequence["result"] = 100
 				createModerationSequence["uuid"] = uuid.New().String()
 				if i == 0 {
 					createModerationSequence["is_current"] = true
