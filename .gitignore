@@ -1,0 +1,10 @@
+.env
+.DS_Store
+main
+*.log
+.idea
+/tmp
+62whale
+run.sh
+nohup.out
+.vscode
