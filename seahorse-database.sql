@@ -33,8 +33,10 @@ CREATE TABLE `moderation_sequences` (
   `file_id` varchar(225) DEFAULT NULL,
   `is_current` tinyint(1) DEFAULT '0',
   `uuid` varchar(100) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -43,8 +45,31 @@ CREATE TABLE `moderation_sequences` (
 
 LOCK TABLES `moderation_sequences` WRITE;
 /*!40000 ALTER TABLE `moderation_sequences` DISABLE KEYS */;
-INSERT INTO `moderation_sequences` VALUES (1,1,2,200,1,NULL,NULL,NULL,0,'e5956aff-f9ba-43d4-a766-6876441dd43e'),(2,1,2,200,2,NULL,NULL,NULL,0,'b4b30578-c249-4bf6-a848-1519c0c3c019'),(3,1,2,200,3,NULL,NULL,NULL,0,'72931f88-cdb8-4aff-b061-1765489dd733'),(4,2,2,100,1,NULL,NULL,NULL,1,'dcc20564-bbaa-4fe4-8d9c-d86cfb7518af'),(5,2,2,100,2,NULL,NULL,NULL,0,'90068ec5-6d81-45cc-bfda-4160f245cb7e'),(6,2,2,100,3,NULL,NULL,NULL,0,'70b4bb87-2003-4f5e-8ebf-c05f1420711d'),(7,3,2,100,1,NULL,NULL,NULL,1,'4e612331-2787-4015-a809-0cf93406f452'),(8,3,2,100,2,NULL,NULL,NULL,0,'a8cdca5f-fdc6-4749-b1bf-9a4917d18710'),(9,3,2,100,3,NULL,NULL,NULL,0,'43f67495-894c-4477-b0a5-37b5b8df3ef2');
+INSERT INTO `moderation_sequences` VALUES (1,1,2,200,1,NULL,NULL,NULL,0,'582f2f55-b874-40af-b401-02fbdbff1105','2023-11-29 05:49:19','2023-11-29 05:49:19'),(2,1,2,100,2,NULL,NULL,NULL,0,'6b092f6d-c630-42f6-8008-77fb8be3c4f0','2023-11-29 05:49:19','2023-11-29 05:49:19'),(3,1,2,100,3,NULL,NULL,NULL,0,'060614af-aceb-4de2-b9b1-581c0373ed8b','2023-11-29 05:49:19','2023-11-29 05:49:19');
 /*!40000 ALTER TABLE `moderation_sequences` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `moderation_sequence_users`
+--
+
+DROP TABLE IF EXISTS `moderation_sequence_users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `moderation_sequence_users` (
+  `moderation_sequence_id` bigint unsigned DEFAULT NULL,
+  `user_id` bigint unsigned DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `moderation_sequence_users`
+--
+
+LOCK TABLES `moderation_sequence_users` WRITE;
+/*!40000 ALTER TABLE `moderation_sequence_users` DISABLE KEYS */;
+INSERT INTO `moderation_sequence_users` VALUES (1,2),(2,3),(2,4),(2,5),(3,3),(3,4),(3,5);
+/*!40000 ALTER TABLE `moderation_sequence_users` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -91,8 +116,10 @@ CREATE TABLE `moderations` (
   `is_in_order` tinyint(1) DEFAULT '0',
   `is_extendable` tinyint(1) DEFAULT NULL,
   `status` int DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -101,7 +128,7 @@ CREATE TABLE `moderations` (
 
 LOCK TABLES `moderations` WRITE;
 /*!40000 ALTER TABLE `moderations` DISABLE KEYS */;
-INSERT INTO `moderations` VALUES (1,'b5ad89ce-1c0b-470e-bcea-d92e1a2a3812',NULL,2,1,3,3,NULL,NULL,0,NULL,200),(2,'75c07941-ec7c-4f5a-becf-4bcd9b0cbe44',NULL,2,NULL,1,3,NULL,NULL,0,NULL,100),(3,'7f358f74-3cc5-4967-86e0-8ed83a12aa10',NULL,2,NULL,1,3,NULL,NULL,0,NULL,100);
+INSERT INTO `moderations` VALUES (1,'71c1a391-ae32-43b6-a730-7b82c173bcb3',NULL,2,1,2,3,NULL,NULL,1,NULL,100,'2023-11-29 05:49:19','2023-11-29 05:49:19');
 /*!40000 ALTER TABLE `moderations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -117,8 +144,10 @@ CREATE TABLE `expense_moderations` (
   `moderation_id` bigint unsigned DEFAULT NULL,
   `record_id` bigint unsigned DEFAULT NULL,
   `type` varchar(225) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -127,31 +156,8 @@ CREATE TABLE `expense_moderations` (
 
 LOCK TABLES `expense_moderations` WRITE;
 /*!40000 ALTER TABLE `expense_moderations` DISABLE KEYS */;
-INSERT INTO `expense_moderations` VALUES (1,1,1,NULL),(2,2,1,NULL),(3,3,1,NULL);
+INSERT INTO `expense_moderations` VALUES (1,1,1,NULL,'2023-11-29 05:49:19','2023-11-29 05:49:19');
 /*!40000 ALTER TABLE `expense_moderations` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `moderation_sequence_users`
---
-
-DROP TABLE IF EXISTS `moderation_sequence_users`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `moderation_sequence_users` (
-  `moderation_sequence_id` bigint unsigned DEFAULT NULL,
-  `user_id` bigint unsigned DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `moderation_sequence_users`
---
-
-LOCK TABLES `moderation_sequence_users` WRITE;
-/*!40000 ALTER TABLE `moderation_sequence_users` DISABLE KEYS */;
-INSERT INTO `moderation_sequence_users` VALUES (2,3),(2,4),(2,5),(3,3),(3,4),(3,5),(1,1),(1,2),(1,3),(4,2),(5,3),(5,4),(5,5),(6,3),(6,4),(6,5),(7,2),(8,3),(8,4),(8,5),(9,3),(9,4),(9,5);
-/*!40000 ALTER TABLE `moderation_sequence_users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -163,4 +169,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-11-29  9:28:52
+-- Dump completed on 2023-11-29 12:50:45
