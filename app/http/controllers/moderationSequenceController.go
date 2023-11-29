@@ -107,8 +107,11 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 				moderation["status"] = app_constant.Approve
 			} else {
 				// convert moderationSequence["step"] to int and add 1
-				moderation["step_current"] = moderationSequence["step"].(int64) + 1
 				moderation["status"] = app_constant.Pending
+
+				if fmt.Sprintf("%v", moderation["is_in_order"]) == fmt.Sprintf("%v", 1) {
+					moderation["step_current"] = moderationSequence["step"].(int64) + 1
+				}
 			}
 		} else {
 			moderation["status"] = moderationSequence["result"]
@@ -128,10 +131,10 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, utils.ResponseData("success", "create "+ctrl.PrefixSingularLabel+" "+ctrl.PrefixTable+" success", transformer))
 }
 
-func (ctrl ModerationSequenceController) Update(ctx *gin.Context) {
+func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
 	ctrl.Init(ctx)
 
-	transformer, err := utils.JsonFileParser(config.Data.SettingPath + "/transformers/request/" + ctrl.PluralName + "/moderate.json")
+	transformer, err := utils.JsonFileParser(config.Data.SettingPath + "/transformers/request/" + ctrl.PluralName + "/moderator.json")
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ResponseData("error", err.Error(), nil))
@@ -160,14 +163,16 @@ func (ctrl ModerationSequenceController) Update(ctx *gin.Context) {
 		}
 
 		// insert new moderation_sequence_users
+		createModerationSequenceUser := []map[string]any{}
 		for _, v := range transformer["user_ids"].([]any) {
-			createModerationSequenceUser := make(map[string]any)
-			createModerationSequenceUser["moderation_sequence_id"] = moderationSequence["id"]
-			createModerationSequenceUser["user_id"] = v
+			createModerationSequenceUser = append(createModerationSequenceUser, map[string]any{
+				"moderation_sequence_id": moderationSequence["id"],
+				"user_id":                v,
+			})
+		}
 
-			if err = tx.Table(ctrl.PrefixSingularName + "_sequence_users").Create(&createModerationSequenceUser).Error; err != nil {
-				return err
-			}
+		if err = tx.Table(ctrl.PrefixSingularName + "_sequence_users").Create(&createModerationSequenceUser).Error; err != nil {
+			return err
 		}
 
 		return nil

@@ -28,7 +28,6 @@ func main() {
 
 	apiV1 := r.Group("/api/v1/moderation").Use(middlewares.DbSelectorMiddleware())
 	{
-
 		apiV1.POST("/:table", func(c *gin.Context) {
 			ctrl := controllers.ModerationController{}
 			ctrl.Create(c)
@@ -39,10 +38,10 @@ func main() {
 			ctrl.Moderate(c)
 		})
 
-		// apiV1.PUT("/:table/moderation-sequence/:id/update", func(c *gin.Context) {
-		// 	ctrl := controllers.ModerationSequenceController{}
-		// 	ctrl.Update(c)
-		// })
+		apiV1.PUT("/:table/moderation-sequence/:id/update-moderator", func(c *gin.Context) {
+			ctrl := controllers.ModerationSequenceController{}
+			ctrl.UpdateModerator(c)
+		})
 	}
 
 	r.GET("/health", func(c *gin.Context) {

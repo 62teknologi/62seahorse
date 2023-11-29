@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/62teknologi/62seahorse/62golib/utils"
@@ -57,13 +58,32 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 	utils.MapNullValuesRemover(transformer)
 
 	if err = utils.DB.Transaction(func(tx *gorm.DB) error {
+		recordRef := make(map[string]any)
+		if err = tx.Table(ctrl.Table).Where("id = ?", transformer["ref_id"]).Take(&recordRef).Error; err != nil {
+			return err
+		}
+
+		pivotTable := make(map[string]any)
+		if err = tx.Table(ctrl.SingularName+"_"+ctrl.PrefixPluralName).Where("record_id = ?", transformer["ref_id"]).Take(&pivotTable).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		}
+
+		if pivotTable["moderation_id"] != nil {
+			return errors.New("moderation already exists")
+		}
+
 		createModeration := make(map[string]any)
 		createModeration["requested_by"] = transformer["moderator_id"]
-		createModeration["step_current"] = 1
 		createModeration["step_total"] = len(transformer["sequence"].([]any))
 		createModeration["is_in_order"] = transformer["is_in_order"]
 		createModeration["uuid"] = uuid.New().String()
 		createModeration["status"] = 100
+
+		if transformer["is_in_order"] == true {
+			createModeration["step_current"] = 1
+		}
 
 		if err = tx.Table(ctrl.PrefixTable).Create(&createModeration).Error; err != nil {
 			return err
@@ -92,14 +112,18 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 				if userIds != nil {
 					moderationSequence := make(map[string]any)
 					tx.Table(ctrl.PrefixSingularName + "_sequences").Where(createModerationSequence).Take(&moderationSequence)
+					createModerationSequenceUsers := []map[string]any{}
 					for _, w := range userIds.([]any) {
-						createModerationSequenceItems := make(map[string]any)
-						createModerationSequenceItems["user_id"] = w
-						createModerationSequenceItems["moderation_sequence_id"] = moderationSequence["id"]
-
-						if err = tx.Table(ctrl.PrefixSingularName + "_sequence_users").Create(&createModerationSequenceItems).Error; err != nil {
-							return err
+						cmu := map[string]any{
+							"moderation_sequence_id": moderationSequence["id"],
+							"user_id":                w,
 						}
+
+						createModerationSequenceUsers = append(createModerationSequenceUsers, cmu)
+					}
+
+					if err = tx.Table(ctrl.PrefixSingularName + "_sequence_users").Create(&createModerationSequenceUsers).Error; err != nil {
+						return err
 					}
 				}
 			}
