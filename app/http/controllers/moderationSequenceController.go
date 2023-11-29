@@ -83,7 +83,13 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			return err
 		}
 
-		if moderation["step_current"] != moderationSequence["step"] && fmt.Sprintf("%v", moderation["is_in_order"]) == fmt.Sprintf("%v", 1) {
+		if moderation["step_current"] == nil {
+			moderation["step_current"] = 1
+		} else {
+			moderation["step_current"] = utils.ConvertToInt(moderation["step_current"]) + 1
+		}
+
+		if fmt.Sprintf("%v", moderation["step_current"]) != fmt.Sprintf("%v", moderationSequence["step"]) && fmt.Sprintf("%v", moderation["is_in_order"]) == fmt.Sprintf("%v", 1) {
 			return errors.New("Moderation sequence is not current")
 		}
 
@@ -92,30 +98,38 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			return errors.New("Moderation is already finished")
 		}
 
-		if err := tx.Table(ctrl.PrefixSingularName+"_sequences").Where("id = ?", moderationSequence["id"]).Updates(&moderationSequence).Error; err != nil {
+		moderation["last_moderation_sequence_id"] = moderationSequence["id"]
+		unModeratedSequences := make([]map[string]any, 0)
+
+		if err := tx.Table(ctrl.PrefixSingularName+"_sequences").Where("moderation_id = ?", moderation["id"]).Where("result = ?", app_constant.Pending).Where("id != ?", moderationSequence["id"]).Find(&unModeratedSequences).Error; err != nil {
 			return err
 		}
 
-		moderation["last_moderation_sequence_id"] = moderationSequence["id"]
-		if fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Approve) {
-			unModeratedSequences := make([]map[string]any, 0)
-			if err := tx.Table(ctrl.PrefixSingularName+"_sequences").Where("moderation_id = ?", moderation["id"]).Where("result = ?", app_constant.Pending).Where("id != ?", moderationSequence["id"]).Find(&unModeratedSequences).Error; err != nil {
-				return err
+		if fmt.Sprintf("%v", moderation["is_in_order"]) != fmt.Sprintf("%v", 1) {
+			moderationSequence["step"] = moderation["step_current"]
+		} else {
+			if len(unModeratedSequences) > 0 {
+				if err = tx.Table(ctrl.PrefixSingularName+"_sequences").Where("moderation_id = ?", moderation["id"]).Where("step = ?", utils.ConvertToInt(moderation["step_current"])+1).Update("is_current", true).Error; err != nil {
+					return err
+				}
 			}
+		}
 
+		moderationSequence["is_current"] = false
+
+		if fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Approve) {
 			if len(unModeratedSequences) == 0 {
 				moderation["status"] = app_constant.Approve
 			} else {
 				// convert moderationSequence["step"] to int and add 1
 				moderation["status"] = app_constant.Pending
-
-				if fmt.Sprintf("%v", moderation["is_in_order"]) == fmt.Sprintf("%v", 1) {
-					moderation["step_current"] = moderationSequence["step"].(int64) + 1
-				}
 			}
 		} else {
 			moderation["status"] = moderationSequence["result"]
-			moderation["step_current"] = moderationSequence["step"]
+		}
+
+		if err := tx.Table(ctrl.PrefixSingularName+"_sequences").Where("id = ?", moderationSequence["id"]).Updates(&moderationSequence).Error; err != nil {
+			return err
 		}
 
 		if err := tx.Table(ctrl.PrefixTable).Where("id = ?", moderation["id"]).Updates(&moderation).Error; err != nil {

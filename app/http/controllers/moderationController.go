@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/62teknologi/62seahorse/62golib/utils"
+	"github.com/62teknologi/62seahorse/app/app_constant"
 	"github.com/62teknologi/62seahorse/config"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -71,19 +73,22 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		}
 
 		if pivotTable["moderation_id"] != nil {
-			return errors.New("moderation already exists")
+			moderationCheck := make(map[string]any)
+			if err = tx.Table(ctrl.PrefixTable).Where("id = ?", pivotTable["moderation_id"]).Take(&moderationCheck).Error; err != nil {
+				return err
+			}
+
+			if moderationCheck["status"] != app_constant.Reject {
+				return errors.New("moderation already exists")
+			}
 		}
 
 		createModeration := make(map[string]any)
-		createModeration["requested_by"] = transformer["moderator_id"]
+		createModeration["requested_by"] = transformer["user_id"]
 		createModeration["step_total"] = len(transformer["sequence"].([]any))
 		createModeration["is_in_order"] = transformer["is_in_order"]
 		createModeration["uuid"] = uuid.New().String()
 		createModeration["status"] = 100
-
-		if transformer["is_in_order"] == true {
-			createModeration["step_current"] = 1
-		}
 
 		if err = tx.Table(ctrl.PrefixTable).Create(&createModeration).Error; err != nil {
 			return err
@@ -97,11 +102,14 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 				createModerationSequence := make(map[string]any)
 				createModerationSequence["moderation_id"] = moderation["id"]
 				createModerationSequence["moderator_id"] = transformer["moderator_id"]
-				createModerationSequence["step"] = i + 1
 				createModerationSequence["result"] = 100
 				createModerationSequence["uuid"] = uuid.New().String()
-				if i == 0 {
-					createModerationSequence["is_current"] = true
+
+				if fmt.Sprintf("%v", moderation["is_in_order"]) == fmt.Sprintf("%v", 1) {
+					createModerationSequence["step"] = i + 1
+					if i == 0 {
+						createModerationSequence["is_current"] = true
+					}
 				}
 
 				if err = tx.Table(ctrl.PrefixSingularName + "_sequences").Create(&createModerationSequence).Error; err != nil {
