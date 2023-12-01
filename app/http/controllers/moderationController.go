@@ -78,7 +78,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 				return err
 			}
 
-			if moderationCheck["status"] != app_constant.Reject {
+			if moderationCheck["status"] != nil && fmt.Sprintf("%v", moderationCheck["status"]) != fmt.Sprintf("%v", app_constant.Reject) {
 				return errors.New("moderation already exists")
 			}
 		}
