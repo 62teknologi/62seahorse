@@ -66,20 +66,9 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		}
 
 		pivotTable := make(map[string]any)
-		if err = tx.Table(ctrl.SingularName+"_"+ctrl.PrefixPluralName).Where("record_id = ?", transformer["ref_id"]).Take(&pivotTable).Error; err != nil {
+		if err = tx.Table(ctrl.SingularName+"_"+ctrl.PrefixPluralName).Where("record_id = ?", transformer["ref_id"]).Order("id desc").Take(&pivotTable).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
-			}
-		}
-
-		if pivotTable["moderation_id"] != nil {
-			moderationCheck := make(map[string]any)
-			if err = tx.Table(ctrl.PrefixTable).Where("id = ?", pivotTable["moderation_id"]).Take(&moderationCheck).Error; err != nil {
-				return err
-			}
-
-			if moderationCheck["status"] != nil && fmt.Sprintf("%v", moderationCheck["status"]) != fmt.Sprintf("%v", app_constant.Revise) {
-				return errors.New("moderation already exists")
 			}
 		}
 
@@ -89,6 +78,32 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		createModeration["is_in_order"] = transformer["is_in_order"]
 		createModeration["uuid"] = uuid.New().String()
 		createModeration["status"] = 100
+
+		if pivotTable["moderation_id"] != nil {
+			moderationCheck := make(map[string]any)
+			if err = tx.Table(ctrl.PrefixTable).Where("id = ?", pivotTable["moderation_id"]).Take(&moderationCheck).Error; err != nil {
+				return err
+			}
+
+			if moderationCheck["status"] != nil {
+				moderationStatus := fmt.Sprintf("%v", moderationCheck["status"])
+
+				if moderationStatus == fmt.Sprintf("%v", app_constant.Pending) {
+					return errors.New("Moderation is already exist")
+				}
+
+				if moderationStatus == fmt.Sprintf("%v", app_constant.Approve) {
+					return errors.New("Moderation is already approved")
+				}
+
+				if moderationStatus == fmt.Sprintf("%v", app_constant.Reject) {
+					return errors.New("Moderation is already rejected")
+				}
+			}
+
+			createModeration["parent_id"] = pivotTable["moderation_id"]
+
+		}
 
 		if err = tx.Table(ctrl.PrefixTable).Create(&createModeration).Error; err != nil {
 			return err
