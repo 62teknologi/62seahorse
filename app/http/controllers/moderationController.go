@@ -78,7 +78,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 				return err
 			}
 
-			if moderationCheck["status"] != nil && fmt.Sprintf("%v", moderationCheck["status"]) != fmt.Sprintf("%v", app_constant.Reject) {
+			if moderationCheck["status"] != nil && fmt.Sprintf("%v", moderationCheck["status"]) != fmt.Sprintf("%v", app_constant.Revise) {
 				return errors.New("moderation already exists")
 			}
 		}
@@ -101,7 +101,6 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 			for i, v := range transformer["sequence"].([]any) {
 				createModerationSequence := make(map[string]any)
 				createModerationSequence["moderation_id"] = moderation["id"]
-				createModerationSequence["moderator_id"] = transformer["moderator_id"]
 				createModerationSequence["result"] = 100
 				createModerationSequence["uuid"] = uuid.New().String()
 

@@ -65,7 +65,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		}
 
 		if fmt.Sprintf("%v", moderationSequence["result"]) != fmt.Sprintf("%v", app_constant.Pending) {
-			return errors.New("result must be pending")
+			return errors.New("Moderation Sequence must be pending")
 		}
 
 		moderationSequenceUser := make(map[string]any)
@@ -127,6 +127,8 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		} else {
 			moderation["status"] = moderationSequence["result"]
 		}
+
+		moderationSequence["moderator_id"] = transformer["moderator_id"]
 
 		if err := tx.Table(ctrl.PrefixSingularName+"_sequences").Where("id = ?", moderationSequence["id"]).Updates(&moderationSequence).Error; err != nil {
 			return err
