@@ -19,14 +19,15 @@ type ModerationController struct {
 	SingularLabel       string
 	PluralLabel         string
 	Table               string
-	PrefixSingularName  string
-	PrefixPluralName    string
-	PrefixSingularLabel string
-	PrefixTable         string
-	SuffixSingularName  string
-	SuffixPluralName    string
-	SuffixSingularLabel string
-	SuffixTable         string
+	ModuleName		   string
+	ModerationTableSingularName  string
+	ModerationTablePluralName    string
+	ModerationTableSingularLabel string
+	ModerationTableTable         string
+	SequenceSuffixSingularName  string
+	SequenceSuffixPluralName    string
+	SequenceSuffixSingularLabel string
+	SequenceSuffixTable         string
 }
 
 func (ctrl *ModerationController) Init(ctx *gin.Context) {
@@ -35,14 +36,15 @@ func (ctrl *ModerationController) Init(ctx *gin.Context) {
 	ctrl.SingularLabel = ctrl.SingularName
 	ctrl.PluralLabel = ctrl.PluralName
 	ctrl.Table = ctrl.PluralName
-	ctrl.PrefixSingularName = utils.Pluralize.Singular(config.Data.Prefix)
-	ctrl.PrefixPluralName = utils.Pluralize.Plural(config.Data.Prefix)
-	ctrl.PrefixSingularLabel = ctrl.PrefixSingularName
-	ctrl.PrefixTable = ctrl.PrefixPluralName
-	ctrl.SuffixSingularName = utils.Pluralize.Singular(config.Data.Suffix)
-	ctrl.SuffixPluralName = utils.Pluralize.Plural(config.Data.Suffix)
-	ctrl.SuffixSingularLabel = ctrl.SuffixSingularName
-	ctrl.SuffixTable = ctrl.SuffixPluralName
+	ctrl.ModuleName = config.Data.ModuleName
+	ctrl.ModerationTableSingularName = utils.Pluralize.Singular(config.Data.ModerationTable)
+	ctrl.ModerationTablePluralName = utils.Pluralize.Plural(config.Data.ModerationTable)
+	ctrl.ModerationTableSingularLabel = ctrl.ModerationTableSingularName
+	ctrl.ModerationTableTable = ctrl.ModerationTablePluralName
+	ctrl.SequenceSuffixSingularName = utils.Pluralize.Singular(config.Data.SequenceSuffix)
+	ctrl.SequenceSuffixPluralName = utils.Pluralize.Plural(config.Data.SequenceSuffix)
+	ctrl.SequenceSuffixSingularLabel = ctrl.SequenceSuffixSingularName
+	ctrl.SequenceSuffixTable = ctrl.SequenceSuffixPluralName
 }
 
 func (ctrl ModerationController) Create(ctx *gin.Context) {
@@ -72,7 +74,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		}
 
 		pivotTable := make(map[string]any)
-		if err = tx.Table(ctrl.SingularName+"_"+ctrl.PrefixPluralName).Where("record_id = ?", transformer["ref_id"]).Order("id desc").Take(&pivotTable).Error; err != nil {
+		if err = tx.Table(ctrl.SingularName+"_"+ctrl.ModerationTablePluralName).Where("record_id = ?", transformer["ref_id"]).Order("id desc").Take(&pivotTable).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
 			}
@@ -87,7 +89,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 
 		if pivotTable["moderation_id"] != nil {
 			moderationCheck := make(map[string]any)
-			if err = tx.Table("mod_" + ctrl.PrefixTable).Where("id = ?", pivotTable["moderation_id"]).Take(&moderationCheck).Error; err != nil {
+			if err = tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableTable).Where("id = ?", pivotTable["moderation_id"]).Take(&moderationCheck).Error; err != nil {
 				return err
 			}
 
@@ -111,12 +113,12 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 
 		}
 
-		if err = tx.Table("mod_" + ctrl.PrefixTable).Create(&createModeration).Error; err != nil {
+		if err = tx.Table("mod_" + ctrl.ModerationTableTable).Create(&createModeration).Error; err != nil {
 			return err
 		}
 
 		moderation := map[string]any{}
-		tx.Table("mod_" + ctrl.PrefixTable).Where(createModeration).Take(&moderation)
+		tx.Table("mod_" + ctrl.ModerationTableTable).Where(createModeration).Take(&moderation)
 
 		if transformer["sequence"] != nil {
 			for i, v := range transformer["sequence"].([]any) {
@@ -132,14 +134,14 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 					}
 				}
 
-				if err = tx.Table("mod_" + ctrl.PrefixSingularName + "_" + ctrl.SuffixTable).Create(&createModerationSequence).Error; err != nil {
+				if err = tx.Table("mod_" + ctrl.ModerationTableSingularName + "_" + ctrl.SequenceSuffixTable).Create(&createModerationSequence).Error; err != nil {
 					return err
 				}
 
 				userIds := v.(map[string]any)["user_ids"]
 				if userIds != nil {
 					moderationSequence := make(map[string]any)
-					tx.Table("mod_" + ctrl.PrefixSingularName + "_" + ctrl.SuffixTable).Where(createModerationSequence).Take(&moderationSequence)
+					tx.Table("mod_" + ctrl.ModerationTableSingularName + "_" + ctrl.SequenceSuffixTable).Where(createModerationSequence).Take(&moderationSequence)
 					createModerationSequenceUsers := []map[string]any{}
 					for _, w := range userIds.([]any) {
 						cmu := map[string]any{
@@ -150,7 +152,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 						createModerationSequenceUsers = append(createModerationSequenceUsers, cmu)
 					}
 
-					if err = tx.Table("mod_" + ctrl.PrefixSingularName + "_users").Create(&createModerationSequenceUsers).Error; err != nil {
+					if err = tx.Table("mod_" + ctrl.ModerationTableSingularName + "_users").Create(&createModerationSequenceUsers).Error; err != nil {
 						return err
 					}
 				}
@@ -161,7 +163,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		createPivot["moderation_id"] = moderation["id"]
 		createPivot["record_id"] = transformer["ref_id"]
 
-		if err = tx.Table(ctrl.SingularName + "_" + ctrl.PrefixTable).Create(&createPivot).Error; err != nil {
+		if err = tx.Table(ctrl.SingularName + "_" + ctrl.ModerationTableTable).Create(&createPivot).Error; err != nil {
 			return err
 		}
 
@@ -171,5 +173,5 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, utils.ResponseData("success", "create "+ctrl.PrefixSingularLabel+" "+ctrl.PrefixTable+" success", transformer))
+	ctx.JSON(http.StatusOK, utils.ResponseData("success", "create "+ctrl.ModerationTableSingularLabel+" "+ctrl.ModerationTableTable+" success", transformer))
 }
