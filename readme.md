@@ -18,6 +18,43 @@ Make sure to have preinstalled this prerequisites apps before You continue to in
 - MySql
 - Go
 
+# Table Naming Structure
+
+## Normal Tables
+Normal tables follow the naming convention of combining the module name and the moderation table name.
+
+Example:
+- Module: mod
+- Moderation Table: moderation
+- Naming: `mod_moderations`
+
+## Pivot Tables
+Pivot tables combine the moderation table name with the base table name.
+
+Example:
+- Moderation Table: moderation
+- Naming: `expense_moderations`
+
+## Sequence Tables
+Sequence tables include a sequence suffix in addition to the module and moderation table names.
+
+Example:
+- Module: mod
+- Moderation Table: moderation
+- Sequence Suffix: sequence
+- Naming: `mod_moderation_sequences`
+
+## User Tables
+User tables include the hardcoded term "user" in addition to the module and moderation table names.
+
+Example:
+- Module: mod
+- Moderation Table: moderation
+- Naming: `mod_moderation_users`
+
+This naming structure provides clarity and consistency for different types of tables within the database. Adjust the module, moderation table, and any additional suffixes according to your specific naming needs.
+
+
 ### Installation manual
 This installation manual will guide You to running the binary on Your ubuntu or mac terminal.
 
