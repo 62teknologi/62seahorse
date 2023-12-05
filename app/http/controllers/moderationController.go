@@ -22,8 +22,11 @@ type ModerationController struct {
 	PrefixSingularName  string
 	PrefixPluralName    string
 	PrefixSingularLabel string
-	PrefixPluralLabel   string
 	PrefixTable         string
+	SuffixSingularName  string
+	SuffixPluralName    string
+	SuffixSingularLabel string
+	SuffixTable         string
 }
 
 func (ctrl *ModerationController) Init(ctx *gin.Context) {
@@ -35,14 +38,17 @@ func (ctrl *ModerationController) Init(ctx *gin.Context) {
 	ctrl.PrefixSingularName = utils.Pluralize.Singular(config.Data.Prefix)
 	ctrl.PrefixPluralName = utils.Pluralize.Plural(config.Data.Prefix)
 	ctrl.PrefixSingularLabel = ctrl.PrefixSingularName
-	ctrl.PrefixPluralLabel = ctrl.PrefixPluralName
 	ctrl.PrefixTable = ctrl.PrefixPluralName
+	ctrl.SuffixSingularName = utils.Pluralize.Singular(config.Data.Suffix)
+	ctrl.SuffixPluralName = utils.Pluralize.Plural(config.Data.Suffix)
+	ctrl.SuffixSingularLabel = ctrl.SuffixSingularName
+	ctrl.SuffixTable = ctrl.SuffixPluralName
 }
 
 func (ctrl ModerationController) Create(ctx *gin.Context) {
 	ctrl.Init(ctx)
 
-	transformer, err := utils.JsonFileParser(config.Data.SettingPath + "/transformers/request/" + ctrl.PluralName + "/create.json")
+	transformer, err := utils.JsonFileParser(config.Data.SettingPath + "/transformers/request/create.json")
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ResponseData("error", err.Error(), nil))
@@ -81,7 +87,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 
 		if pivotTable["moderation_id"] != nil {
 			moderationCheck := make(map[string]any)
-			if err = tx.Table(ctrl.PrefixTable).Where("id = ?", pivotTable["moderation_id"]).Take(&moderationCheck).Error; err != nil {
+			if err = tx.Table("mod_" + ctrl.PrefixTable).Where("id = ?", pivotTable["moderation_id"]).Take(&moderationCheck).Error; err != nil {
 				return err
 			}
 
@@ -105,12 +111,12 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 
 		}
 
-		if err = tx.Table(ctrl.PrefixTable).Create(&createModeration).Error; err != nil {
+		if err = tx.Table("mod_" + ctrl.PrefixTable).Create(&createModeration).Error; err != nil {
 			return err
 		}
 
 		moderation := map[string]any{}
-		tx.Table(ctrl.PrefixTable).Where(createModeration).Take(&moderation)
+		tx.Table("mod_" + ctrl.PrefixTable).Where(createModeration).Take(&moderation)
 
 		if transformer["sequence"] != nil {
 			for i, v := range transformer["sequence"].([]any) {
@@ -126,14 +132,14 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 					}
 				}
 
-				if err = tx.Table(ctrl.PrefixSingularName + "_sequences").Create(&createModerationSequence).Error; err != nil {
+				if err = tx.Table("mod_" + ctrl.PrefixSingularName + "_" + ctrl.SuffixTable).Create(&createModerationSequence).Error; err != nil {
 					return err
 				}
 
 				userIds := v.(map[string]any)["user_ids"]
 				if userIds != nil {
 					moderationSequence := make(map[string]any)
-					tx.Table(ctrl.PrefixSingularName + "_sequences").Where(createModerationSequence).Take(&moderationSequence)
+					tx.Table("mod_" + ctrl.PrefixSingularName + "_" + ctrl.SuffixTable).Where(createModerationSequence).Take(&moderationSequence)
 					createModerationSequenceUsers := []map[string]any{}
 					for _, w := range userIds.([]any) {
 						cmu := map[string]any{
@@ -144,7 +150,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 						createModerationSequenceUsers = append(createModerationSequenceUsers, cmu)
 					}
 
-					if err = tx.Table(ctrl.PrefixSingularName + "_sequence_users").Create(&createModerationSequenceUsers).Error; err != nil {
+					if err = tx.Table("mod_" + ctrl.PrefixSingularName + "_users").Create(&createModerationSequenceUsers).Error; err != nil {
 						return err
 					}
 				}
@@ -155,7 +161,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		createPivot["moderation_id"] = moderation["id"]
 		createPivot["record_id"] = transformer["ref_id"]
 
-		if err = tx.Table(ctrl.SingularName + "_" + ctrl.PrefixPluralName).Create(&createPivot).Error; err != nil {
+		if err = tx.Table(ctrl.SingularName + "_" + ctrl.PrefixTable).Create(&createPivot).Error; err != nil {
 			return err
 		}
 

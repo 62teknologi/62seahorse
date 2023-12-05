@@ -13,6 +13,7 @@ type Config struct {
 	DBSource2         string `mapstructure:"DB_SOURCE_2"`
 	SettingPath       string `mapstructure:"SETTING_PATH"`
 	Prefix            string `mapstructure:"PREFIX"`
+	Suffix			string `mapstructure:"SUFFIX"`
 }
 
 var Data Config
@@ -29,7 +30,8 @@ func LoadConfig(path string, data *Config) (config Config, err error) {
 
 	viper.SetDefault("SETTING_PATH", "setting")
 
-	viper.SetDefault("PREFIX", "moderations")
+	viper.SetDefault("PREFIX", "moderation")
+	viper.SetDefault("SUFFIX", "item")
 
 	viper.AutomaticEnv()
 
