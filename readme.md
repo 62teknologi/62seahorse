@@ -29,11 +29,13 @@ Example:
 - Naming: `mod_moderations`
 
 ## Pivot Tables
-Pivot tables combine the moderation table name with the base table name.
+Pivot tables combine the moderation table name with the base table name and base module name.
 
 Example:
+- Base Table Module Name: `hr`
+- Base Table Name: `expense`
 - Moderation Table: moderation
-- Naming: `expense_moderations`
+- Naming: `hr_expense_moderations`
 
 ## Sequence Tables
 Sequence tables include a sequence suffix in addition to the module and moderation table names.

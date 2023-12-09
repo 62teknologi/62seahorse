@@ -13,24 +13,26 @@ import (
 )
 
 type ModerationSequenceController struct {
-	SingularName        string
-	PluralName          string
-	SingularLabel       string
-	PluralLabel         string
-	Table               string
-	ModuleName 			string
+	PivotModuleName              string
+	SingularName                 string
+	PluralName                   string
+	SingularLabel                string
+	PluralLabel                  string
+	Table                        string
+	ModuleName                   string
 	ModerationTableSingularName  string
 	ModerationTablePluralName    string
 	ModerationTableSingularLabel string
 	ModerationTablePluralLabel   string
-	ModerationTableTable         string
-	SequenceSuffixSingularName  string
-	SequenceSuffixPluralName    string
-	SequenceSuffixSingularLabel string
-	SequenceSuffixTable         string
+	ModerationTable              string
+	SequenceSuffixSingularName   string
+	SequenceSuffixPluralName     string
+	SequenceSuffixSingularLabel  string
+	SequenceSuffixTable          string
 }
 
 func (ctrl *ModerationSequenceController) Init(ctx *gin.Context) {
+	ctrl.PivotModuleName = utils.Pluralize.Singular(ctx.Param("module"))
 	ctrl.SingularName = utils.Pluralize.Singular(ctx.Param("table"))
 	ctrl.PluralName = utils.Pluralize.Plural(ctx.Param("table"))
 	ctrl.SingularLabel = ctrl.SingularName
@@ -40,7 +42,7 @@ func (ctrl *ModerationSequenceController) Init(ctx *gin.Context) {
 	ctrl.ModerationTableSingularName = utils.Pluralize.Singular(config.Data.ModerationTable)
 	ctrl.ModerationTablePluralName = utils.Pluralize.Plural(config.Data.ModerationTable)
 	ctrl.ModerationTableSingularLabel = ctrl.ModerationTableSingularName
-	ctrl.ModerationTableTable = ctrl.ModerationTablePluralName
+	ctrl.ModerationTable = ctrl.ModerationTablePluralName
 	ctrl.SequenceSuffixSingularName = utils.Pluralize.Singular(config.Data.SequenceSuffix)
 	ctrl.SequenceSuffixPluralName = utils.Pluralize.Plural(config.Data.SequenceSuffix)
 	ctrl.SequenceSuffixSingularLabel = ctrl.SequenceSuffixSingularName
@@ -69,7 +71,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 	if err = utils.DB.Transaction(func(tx *gorm.DB) error {
 		moderationSequence := make(map[string]any)
-		if err := tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName+"_" + ctrl.SequenceSuffixTable).Where("id = ?", ctx.Param("id")).Take(&moderationSequence).Error; err != nil {
+		if err := tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable).Where("id = ?", ctx.Param("id")).Take(&moderationSequence).Error; err != nil {
 			return err
 		}
 
@@ -78,7 +80,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		}
 
 		moderationSequenceUser := make(map[string]any)
-		if err := tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName+"_users").Where("moderation_sequence_id = ?", moderationSequence["id"]).Where("user_id = ?", transformer["moderator_id"]).Take(&moderationSequenceUser).Error; err != nil {
+		if err := tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTableSingularName+"_users").Where("item_id = ?", moderationSequence["id"]).Where("user_id = ?", transformer["moderator_id"]).Take(&moderationSequenceUser).Error; err != nil {
 			return errors.New("moderator is not in this moderation sequence")
 		}
 
@@ -88,7 +90,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		moderationSequence["file_id"] = transformer["file_id"]
 
 		moderation := make(map[string]any)
-		if err := tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableTable).Where("id = ?", moderationSequence["moderation_id"]).Take(&moderation).Error; err != nil {
+		if err := tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTable).Where("id = ?", moderationSequence["moderation_id"]).Take(&moderation).Error; err != nil {
 			return err
 		}
 
@@ -98,7 +100,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			moderation["step_current"] = utils.ConvertToInt(moderation["step_current"]) + 1
 		}
 
-		if fmt.Sprintf("%v", moderation["step_current"]) != fmt.Sprintf("%v", moderationSequence["step"]) && fmt.Sprintf("%v", moderation["is_in_order"]) == fmt.Sprintf("%v", 1) {
+		if fmt.Sprintf("%v", moderation["step_current"]) != fmt.Sprintf("%v", moderationSequence["step"]) && fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) {
 			return errors.New("Moderation sequence is not current")
 		}
 
@@ -110,15 +112,15 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		moderation["last_moderation_sequence_id"] = moderationSequence["id"]
 		unModeratedSequences := make([]map[string]any, 0)
 
-		if err := tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName+"_" + ctrl.SequenceSuffixTable).Where("moderation_id = ?", moderation["id"]).Where("result = ?", app_constant.Pending).Where("id != ?", moderationSequence["id"]).Find(&unModeratedSequences).Error; err != nil {
+		if err := tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable).Where("moderation_id = ?", moderation["id"]).Where("result = ?", app_constant.Pending).Where("id != ?", moderationSequence["id"]).Find(&unModeratedSequences).Error; err != nil {
 			return err
 		}
 
-		if fmt.Sprintf("%v", moderation["is_in_order"]) != fmt.Sprintf("%v", 1) {
+		if fmt.Sprintf("%v", moderation["is_ordered_items"]) != fmt.Sprintf("%v", 1) {
 			moderationSequence["step"] = moderation["step_current"]
 		} else {
 			if len(unModeratedSequences) > 0 {
-				if err = tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName+"_" + ctrl.SequenceSuffixTable).Where("moderation_id = ?", moderation["id"]).Where("step = ?", utils.ConvertToInt(moderation["step_current"])+1).Update("is_current", true).Error; err != nil {
+				if err = tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable).Where("moderation_id = ?", moderation["id"]).Where("step = ?", utils.ConvertToInt(moderation["step_current"])+1).Update("is_current", true).Error; err != nil {
 					return err
 				}
 			}
@@ -139,11 +141,11 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 		moderationSequence["moderator_id"] = transformer["moderator_id"]
 
-		if err := tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName+"_" + ctrl.SequenceSuffixTable).Where("id = ?", moderationSequence["id"]).Updates(&moderationSequence).Error; err != nil {
+		if err := tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable).Where("id = ?", moderationSequence["id"]).Updates(&moderationSequence).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableTable).Where("id = ?", moderation["id"]).Updates(&moderation).Error; err != nil {
+		if err := tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTable).Where("id = ?", moderation["id"]).Updates(&moderation).Error; err != nil {
 			return err
 		}
 
@@ -153,13 +155,13 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, utils.ResponseData("success", "create "+ctrl.ModerationTableSingularLabel+" "+ctrl.ModerationTableTable+" success", transformer))
+	ctx.JSON(http.StatusOK, utils.ResponseData("success", "create "+ctrl.ModerationTableSingularLabel+" "+ctrl.ModerationTable+" success", transformer))
 }
 
 func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
 	ctrl.Init(ctx)
 
-	transformer, err := utils.JsonFileParser(config.Data.SettingPath + "/transformers/request/" + ctrl.PluralName + "/moderator.json")
+	transformer, err := utils.JsonFileParser(config.Data.SettingPath + "/transformers/request/moderator.json")
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ResponseData("error", err.Error(), nil))
@@ -178,12 +180,16 @@ func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
 
 	if err = utils.DB.Transaction(func(tx *gorm.DB) error {
 		moderationSequence := make(map[string]any)
-		if err := tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName+"_").Where("id = ?", ctx.Param("id")).Take(&moderationSequence).Error; err != nil {
+		if err := tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable).Where("id = ?", ctx.Param("id")).Take(&moderationSequence).Error; err != nil {
 			return err
 		}
 
+		if fmt.Sprintf("%v", moderationSequence["result"]) != fmt.Sprintf("%v", app_constant.Pending) {
+			return errors.New("Moderation Sequence must be pending")
+		}
+
 		// delete all moderation_sequence_users
-		if err := tx.Table(ctrl.ModerationTableSingularName+"_sequence_users").Where("moderation_sequence_id = ?", moderationSequence["id"]).Delete(&moderationSequence).Error; err != nil {
+		if err := tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTableSingularName+"_users").Where("item_id = ?", moderationSequence["id"]).Delete(&moderationSequence).Error; err != nil {
 			return err
 		}
 
@@ -191,12 +197,13 @@ func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
 		createModerationSequenceUser := []map[string]any{}
 		for _, v := range transformer["user_ids"].([]any) {
 			createModerationSequenceUser = append(createModerationSequenceUser, map[string]any{
-				"moderation_sequence_id": moderationSequence["id"],
-				"user_id":                v,
+				"item_id":       moderationSequence["id"],
+				"user_id":       v,
+				"moderation_id": moderationSequence["moderation_id"],
 			})
 		}
 
-		if err = tx.Table(ctrl.ModerationTableSingularName + "_sequence_users").Create(&createModerationSequenceUser).Error; err != nil {
+		if err = tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName + "_users").Create(&createModerationSequenceUser).Error; err != nil {
 			return err
 		}
 
@@ -206,5 +213,5 @@ func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, utils.ResponseData("success", "update "+ctrl.ModerationTableSingularLabel+" "+ctrl.ModerationTableTable+" success", transformer))
+	ctx.JSON(http.StatusOK, utils.ResponseData("success", "update "+ctrl.ModerationTableSingularLabel+" "+ctrl.ModerationTable+" success", transformer))
 }

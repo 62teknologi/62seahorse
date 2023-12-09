@@ -14,23 +14,25 @@ import (
 )
 
 type ModerationController struct {
-	SingularName        string
-	PluralName          string
-	SingularLabel       string
-	PluralLabel         string
-	Table               string
-	ModuleName		   string
+	PivotModuleName              string
+	SingularName                 string
+	PluralName                   string
+	SingularLabel                string
+	PluralLabel                  string
+	Table                        string
+	ModuleName                   string
 	ModerationTableSingularName  string
 	ModerationTablePluralName    string
 	ModerationTableSingularLabel string
 	ModerationTableTable         string
-	SequenceSuffixSingularName  string
-	SequenceSuffixPluralName    string
-	SequenceSuffixSingularLabel string
-	SequenceSuffixTable         string
+	SequenceSuffixSingularName   string
+	SequenceSuffixPluralName     string
+	SequenceSuffixSingularLabel  string
+	SequenceSuffixTable          string
 }
 
 func (ctrl *ModerationController) Init(ctx *gin.Context) {
+	ctrl.PivotModuleName = utils.Pluralize.Singular(ctx.Param("module"))
 	ctrl.SingularName = utils.Pluralize.Singular(ctx.Param("table"))
 	ctrl.PluralName = utils.Pluralize.Plural(ctx.Param("table"))
 	ctrl.SingularLabel = ctrl.SingularName
@@ -69,12 +71,12 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 
 	if err = utils.DB.Transaction(func(tx *gorm.DB) error {
 		recordRef := make(map[string]any)
-		if err = tx.Table(ctrl.Table).Where("id = ?", transformer["ref_id"]).Take(&recordRef).Error; err != nil {
+		if err = tx.Table(ctrl.PivotModuleName+"_"+ctrl.Table).Where("id = ?", transformer["ref_id"]).Take(&recordRef).Error; err != nil {
 			return err
 		}
 
 		pivotTable := make(map[string]any)
-		if err = tx.Table(ctrl.SingularName+"_"+ctrl.ModerationTablePluralName).Where("record_id = ?", transformer["ref_id"]).Order("id desc").Take(&pivotTable).Error; err != nil {
+		if err = tx.Table(ctrl.PivotModuleName+"_"+ctrl.SingularName+"_"+ctrl.ModerationTablePluralName).Where(ctrl.SingularLabel+"_id = ?", transformer["ref_id"]).Order("id desc").Take(&pivotTable).Error; err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
 			}
@@ -83,13 +85,13 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		createModeration := make(map[string]any)
 		createModeration["requested_by"] = transformer["user_id"]
 		createModeration["step_total"] = len(transformer["sequence"].([]any))
-		createModeration["is_in_order"] = transformer["is_in_order"]
+		createModeration["is_ordered_items"] = transformer["is_ordered_items"]
 		createModeration["uuid"] = uuid.New().String()
 		createModeration["status"] = 100
 
 		if pivotTable["moderation_id"] != nil {
 			moderationCheck := make(map[string]any)
-			if err = tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableTable).Where("id = ?", pivotTable["moderation_id"]).Take(&moderationCheck).Error; err != nil {
+			if err = tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTableTable).Where("id = ?", pivotTable["moderation_id"]).Take(&moderationCheck).Error; err != nil {
 				return err
 			}
 
@@ -113,12 +115,12 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 
 		}
 
-		if err = tx.Table("mod_" + ctrl.ModerationTableTable).Create(&createModeration).Error; err != nil {
+		if err = tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableTable).Create(&createModeration).Error; err != nil {
 			return err
 		}
 
 		moderation := map[string]any{}
-		tx.Table("mod_" + ctrl.ModerationTableTable).Where(createModeration).Take(&moderation)
+		tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableTable).Where(createModeration).Take(&moderation)
 
 		if transformer["sequence"] != nil {
 			for i, v := range transformer["sequence"].([]any) {
@@ -127,32 +129,33 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 				createModerationSequence["result"] = 100
 				createModerationSequence["uuid"] = uuid.New().String()
 
-				if fmt.Sprintf("%v", moderation["is_in_order"]) == fmt.Sprintf("%v", 1) {
+				if fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) {
 					createModerationSequence["step"] = i + 1
 					if i == 0 {
 						createModerationSequence["is_current"] = true
 					}
 				}
 
-				if err = tx.Table("mod_" + ctrl.ModerationTableSingularName + "_" + ctrl.SequenceSuffixTable).Create(&createModerationSequence).Error; err != nil {
+				if err = tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName + "_" + ctrl.SequenceSuffixTable).Create(&createModerationSequence).Error; err != nil {
 					return err
 				}
 
 				userIds := v.(map[string]any)["user_ids"]
 				if userIds != nil {
 					moderationSequence := make(map[string]any)
-					tx.Table("mod_" + ctrl.ModerationTableSingularName + "_" + ctrl.SequenceSuffixTable).Where(createModerationSequence).Take(&moderationSequence)
+					tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName + "_" + ctrl.SequenceSuffixTable).Where(createModerationSequence).Take(&moderationSequence)
 					createModerationSequenceUsers := []map[string]any{}
 					for _, w := range userIds.([]any) {
 						cmu := map[string]any{
-							"moderation_sequence_id": moderationSequence["id"],
-							"user_id":                w,
+							"item_id":       moderationSequence["id"],
+							"moderation_id": moderation["id"],
+							"user_id":       w,
 						}
 
 						createModerationSequenceUsers = append(createModerationSequenceUsers, cmu)
 					}
 
-					if err = tx.Table("mod_" + ctrl.ModerationTableSingularName + "_users").Create(&createModerationSequenceUsers).Error; err != nil {
+					if err = tx.Table(ctrl.ModuleName + "_" + ctrl.ModerationTableSingularName + "_users").Create(&createModerationSequenceUsers).Error; err != nil {
 						return err
 					}
 				}
@@ -161,9 +164,9 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 
 		createPivot := make(map[string]any)
 		createPivot["moderation_id"] = moderation["id"]
-		createPivot["record_id"] = transformer["ref_id"]
+		createPivot[ctrl.SingularLabel+"_id"] = transformer["ref_id"]
 
-		if err = tx.Table(ctrl.SingularName + "_" + ctrl.ModerationTableTable).Create(&createPivot).Error; err != nil {
+		if err = tx.Table(ctrl.PivotModuleName + "_" + ctrl.SingularName + "_" + ctrl.ModerationTableTable).Create(&createPivot).Error; err != nil {
 			return err
 		}
 

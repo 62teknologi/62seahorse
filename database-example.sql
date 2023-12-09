@@ -16,6 +16,89 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `ai_expense_moderations`
+--
+
+DROP TABLE IF EXISTS `ai_expense_moderations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ai_expense_moderations` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `moderation_id` bigint unsigned DEFAULT NULL,
+  `expense_id` bigint unsigned DEFAULT NULL,
+  `type` varchar(225) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ai_expense_moderations`
+--
+
+LOCK TABLES `ai_expense_moderations` WRITE;
+/*!40000 ALTER TABLE `ai_expense_moderations` DISABLE KEYS */;
+/*!40000 ALTER TABLE `ai_expense_moderations` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `mod_moderation_users`
+--
+
+DROP TABLE IF EXISTS `mod_moderation_users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mod_moderation_users` (
+  `item_id` bigint unsigned DEFAULT NULL,
+  `user_id` bigint unsigned DEFAULT NULL,
+  `moderation_id` bigint unsigned DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mod_moderation_users`
+--
+
+LOCK TABLES `mod_moderation_users` WRITE;
+/*!40000 ALTER TABLE `mod_moderation_users` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mod_moderation_users` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `mod_moderation_items`
+--
+
+DROP TABLE IF EXISTS `mod_moderation_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `mod_moderation_items` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `moderation_id` bigint unsigned DEFAULT NULL,
+  `moderator_id` bigint unsigned DEFAULT NULL,
+  `result` int DEFAULT NULL,
+  `step` smallint DEFAULT NULL,
+  `set` smallint DEFAULT NULL,
+  `remarks` varchar(225) DEFAULT NULL,
+  `file_id` varchar(225) DEFAULT NULL,
+  `is_current` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `uuid` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `mod_moderation_items`
+--
+
+LOCK TABLES `mod_moderation_items` WRITE;
+/*!40000 ALTER TABLE `mod_moderation_items` DISABLE KEYS */;
+/*!40000 ALTER TABLE `mod_moderation_items` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `ai_expenses`
 --
 
@@ -40,91 +123,6 @@ INSERT INTO `ai_expenses` VALUES (1,'thami'),(2,'kusuma');
 UNLOCK TABLES;
 
 --
--- Table structure for table `mod_moderation_users`
---
-
-DROP TABLE IF EXISTS `mod_moderation_users`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `mod_moderation_users` (
-  `moderation_sequence_id` bigint unsigned DEFAULT NULL,
-  `user_id` bigint unsigned DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `mod_moderation_users`
---
-
-LOCK TABLES `mod_moderation_users` WRITE;
-/*!40000 ALTER TABLE `mod_moderation_users` DISABLE KEYS */;
-INSERT INTO `mod_moderation_users` VALUES (1,2),(2,3),(2,4),(2,5),(3,3),(3,4),(3,5);
-/*!40000 ALTER TABLE `mod_moderation_users` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `ai_expense_moderations`
---
-
-DROP TABLE IF EXISTS `ai_expense_moderations`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ai_expense_moderations` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `moderation_id` bigint unsigned DEFAULT NULL,
-  `record_id` bigint unsigned DEFAULT NULL,
-  `type` varchar(225) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `ai_expense_moderations`
---
-
-LOCK TABLES `ai_expense_moderations` WRITE;
-/*!40000 ALTER TABLE `ai_expense_moderations` DISABLE KEYS */;
-INSERT INTO `ai_expense_moderations` VALUES (1,1,1,NULL,'2023-12-05 09:24:22','2023-12-05 09:24:22');
-/*!40000 ALTER TABLE `ai_expense_moderations` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `mod_moderation_items`
---
-
-DROP TABLE IF EXISTS `mod_moderation_items`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `mod_moderation_items` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `moderation_id` bigint unsigned DEFAULT NULL,
-  `moderator_id` bigint unsigned DEFAULT NULL,
-  `result` int DEFAULT NULL,
-  `step` smallint DEFAULT NULL,
-  `set` smallint DEFAULT NULL,
-  `remarks` varchar(225) DEFAULT NULL,
-  `file_id` varchar(225) DEFAULT NULL,
-  `is_current` tinyint(1) DEFAULT '0',
-  `uuid` varchar(100) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `mod_moderation_items`
---
-
-LOCK TABLES `mod_moderation_items` WRITE;
-/*!40000 ALTER TABLE `mod_moderation_items` DISABLE KEYS */;
-INSERT INTO `mod_moderation_items` VALUES (1,1,2,200,1,NULL,'ok','10',0,'b99afac6-a1bf-41be-8888-3eb718a3547e','2023-12-05 09:24:22','2023-12-05 09:24:22'),(2,1,NULL,100,2,NULL,NULL,NULL,1,'f584c406-1a9e-4603-a010-2f1fd7ea4c9a','2023-12-05 09:24:22','2023-12-05 09:24:22'),(3,1,NULL,100,3,NULL,NULL,NULL,0,'243d33ad-04f5-4b0a-90f6-34e1a078e8eb','2023-12-05 09:24:22','2023-12-05 09:24:22');
-/*!40000 ALTER TABLE `mod_moderation_items` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `mod_moderations`
 --
 
@@ -133,7 +131,6 @@ DROP TABLE IF EXISTS `mod_moderations`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `mod_moderations` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(225) DEFAULT NULL,
   `parent_id` bigint unsigned DEFAULT NULL,
   `requested_by` bigint unsigned DEFAULT NULL,
   `last_moderation_sequence_id` bigint unsigned DEFAULT NULL,
@@ -141,13 +138,14 @@ CREATE TABLE `mod_moderations` (
   `step_total` int DEFAULT NULL,
   `set_current` bigint unsigned DEFAULT NULL,
   `set_total` int DEFAULT NULL,
-  `is_in_order` tinyint(1) DEFAULT '0',
+  `is_ordered_items` tinyint(1) DEFAULT '0',
   `is_extendable` tinyint(1) DEFAULT NULL,
   `status` int DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `uuid` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -156,7 +154,6 @@ CREATE TABLE `mod_moderations` (
 
 LOCK TABLES `mod_moderations` WRITE;
 /*!40000 ALTER TABLE `mod_moderations` DISABLE KEYS */;
-INSERT INTO `mod_moderations` VALUES (1,'8d16aaf7-2f07-44b0-bff1-8fb65018c53d',NULL,1,1,1,3,NULL,NULL,1,NULL,100,'2023-12-05 09:24:22','2023-12-05 09:24:22');
 /*!40000 ALTER TABLE `mod_moderations` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -169,4 +166,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-12-05 16:30:47
+-- Dump completed on 2023-12-09 11:36:43
