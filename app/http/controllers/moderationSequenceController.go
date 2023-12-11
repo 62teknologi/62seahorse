@@ -81,7 +81,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		}
 
 		moderationSequenceUser := make(map[string]any)
-		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(utils.Pluralize.Singular("user"), utils.Pluralize.Plural("user")))).Where("item_id = ?", moderationSequence["id"]).Where("user_id = ?", transformer["moderator_id"]).Take(&moderationSequenceUser).Error; err != nil {
+		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(utils.Pluralize.Plural("user"), utils.Pluralize.Singular("user")))).Where("item_id = ?", moderationSequence["id"]).Where("user_id = ?", transformer["moderator_id"]).Take(&moderationSequenceUser).Error; err != nil {
 			return errors.New("moderator is not in this moderation sequence")
 		}
 
@@ -202,7 +202,7 @@ func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
 		}
 
 		// delete all moderation_sequence_users
-		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(utils.Pluralize.Singular("user"), utils.Pluralize.Plural("user")))).Where("item_id = ?", moderationSequence["id"]).Delete(&moderationSequence).Error; err != nil {
+		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(utils.Pluralize.Plural("user"), utils.Pluralize.Singular("user")))).Where("item_id = ?", moderationSequence["id"]).Delete(&moderationSequence).Error; err != nil {
 			return err
 		}
 
@@ -216,7 +216,7 @@ func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
 			})
 		}
 
-		if err = tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(utils.Pluralize.Singular("user"), utils.Pluralize.Plural("user")))).Create(&createModerationSequenceUser).Error; err != nil {
+		if err = tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(utils.Pluralize.Plural("user"), utils.Pluralize.Singular("user")))).Create(&createModerationSequenceUser).Error; err != nil {
 			return err
 		}
 
