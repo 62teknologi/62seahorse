@@ -12,9 +12,10 @@ type Config struct {
 	DBSource1         string `mapstructure:"DB_SOURCE_1"`
 	DBSource2         string `mapstructure:"DB_SOURCE_2"`
 	SettingPath       string `mapstructure:"SETTING_PATH"`
-	ModuleName 	  string `mapstructure:"MODULE_NAME"`
-	ModerationTable  string `mapstructure:"MODERATION_TABLE"`
-	SequenceSuffix 	  string `mapstructure:"SEQUENCE_SUFFIX"`
+	ModuleName        string `mapstructure:"MODULE_NAME"`
+	ModerationTable   string `mapstructure:"MODERATION_TABLE"`
+	SequenceSuffix    string `mapstructure:"SEQUENCE_SUFFIX"`
+	UsePluralize      bool   `mapstructure:"USE_PLURALIZE"`
 }
 
 var Data Config
@@ -34,6 +35,7 @@ func LoadConfig(path string, data *Config) (config Config, err error) {
 	viper.SetDefault("MODULE_NAME", "mod")
 	viper.SetDefault("MODERATION_TABLE", "moderation")
 	viper.SetDefault("SEQUENCE_SUFFIX", "sequence")
+	viper.SetDefault("USE_PLURALIZE", true)
 
 	viper.AutomaticEnv()
 
