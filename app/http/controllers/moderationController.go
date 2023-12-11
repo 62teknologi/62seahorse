@@ -126,7 +126,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 			for i, v := range transformer["sequence"].([]any) {
 				createModerationSequence := make(map[string]any)
 				createModerationSequence["moderation_id"] = moderation["id"]
-				createModerationSequence["result"] = 100
+				createModerationSequence["result"] = app_constant.Pending
 				createModerationSequence["uuid"] = uuid.New().String()
 
 				if fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) {

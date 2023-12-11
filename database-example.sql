@@ -30,7 +30,7 @@ CREATE TABLE `ai_expense_moderations` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -39,6 +39,7 @@ CREATE TABLE `ai_expense_moderations` (
 
 LOCK TABLES `ai_expense_moderations` WRITE;
 /*!40000 ALTER TABLE `ai_expense_moderations` DISABLE KEYS */;
+INSERT INTO `ai_expense_moderations` VALUES (1,1,1,NULL,'2023-12-11 02:52:33','2023-12-11 02:52:33');
 /*!40000 ALTER TABLE `ai_expense_moderations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -62,6 +63,7 @@ CREATE TABLE `mod_moderation_users` (
 
 LOCK TABLES `mod_moderation_users` WRITE;
 /*!40000 ALTER TABLE `mod_moderation_users` DISABLE KEYS */;
+INSERT INTO `mod_moderation_users` VALUES (1,2,1),(2,3,1),(2,4,1),(2,5,1),(3,4,1),(3,2,1),(3,3,1);
 /*!40000 ALTER TABLE `mod_moderation_users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -86,7 +88,7 @@ CREATE TABLE `mod_moderation_items` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `uuid` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -95,6 +97,7 @@ CREATE TABLE `mod_moderation_items` (
 
 LOCK TABLES `mod_moderation_items` WRITE;
 /*!40000 ALTER TABLE `mod_moderation_items` DISABLE KEYS */;
+INSERT INTO `mod_moderation_items` VALUES (1,1,2,4,1,NULL,'okay',NULL,0,'2023-12-11 02:52:33','2023-12-11 02:52:33','9aed45af-93d6-4310-8d1e-6662f178eb4f'),(2,1,NULL,1,NULL,NULL,NULL,NULL,0,'2023-12-11 02:52:33','2023-12-11 02:52:33','fe25dfee-d43c-4be7-8a89-c4bffc03e795'),(3,1,NULL,1,NULL,NULL,NULL,NULL,0,'2023-12-11 02:52:33','2023-12-11 02:52:33','9ef8c7c9-c9a1-4eff-956a-1b9cc159bdcd');
 /*!40000 ALTER TABLE `mod_moderation_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -133,7 +136,7 @@ CREATE TABLE `mod_moderations` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `parent_id` bigint unsigned DEFAULT NULL,
   `requested_by` bigint unsigned DEFAULT NULL,
-  `last_moderation_sequence_id` bigint unsigned DEFAULT NULL,
+  `last_item_id` bigint unsigned DEFAULT NULL,
   `step_current` int DEFAULT NULL,
   `step_total` int DEFAULT NULL,
   `set_current` bigint unsigned DEFAULT NULL,
@@ -145,7 +148,7 @@ CREATE TABLE `mod_moderations` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `uuid` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -154,6 +157,7 @@ CREATE TABLE `mod_moderations` (
 
 LOCK TABLES `mod_moderations` WRITE;
 /*!40000 ALTER TABLE `mod_moderations` DISABLE KEYS */;
+INSERT INTO `mod_moderations` VALUES (1,NULL,1,1,1,3,NULL,NULL,0,NULL,4,'2023-12-11 02:52:33','2023-12-11 02:52:33','f6477254-33c8-4577-b309-8e4a06fb04a3');
 /*!40000 ALTER TABLE `mod_moderations` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -166,4 +170,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-12-09 11:36:43
+-- Dump completed on 2023-12-11  9:54:00

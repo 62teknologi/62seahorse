@@ -1,8 +1,8 @@
 package app_constant
 
 const (
-	Pending = 100
-	Approve = 200
-	Reject  = 300
-	Revise  = 400
+	Pending = 1
+	Approve = 2
+	Reject  = 3
+	Revise  = 4
 )

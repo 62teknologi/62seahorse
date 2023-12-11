@@ -94,6 +94,18 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			return err
 		}
 
+		if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Approve) {
+			return errors.New("Moderation is already finished")
+		}
+
+		if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Reject) {
+			return errors.New("Moderation is already rejected")
+		}
+
+		if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Revise) {
+			return errors.New("Moderation is revised")
+		}
+
 		if moderation["step_current"] == nil {
 			moderation["step_current"] = 1
 		} else {
@@ -109,7 +121,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			return errors.New("Moderation is already finished")
 		}
 
-		moderation["last_moderation_sequence_id"] = moderationSequence["id"]
+		moderation["last_item_id"] = moderationSequence["id"]
 		unModeratedSequences := make([]map[string]any, 0)
 
 		if err := tx.Table(ctrl.ModuleName+"_"+ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable).Where("moderation_id = ?", moderation["id"]).Where("result = ?", app_constant.Pending).Where("id != ?", moderationSequence["id"]).Find(&unModeratedSequences).Error; err != nil {

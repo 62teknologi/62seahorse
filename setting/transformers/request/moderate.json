@@ -1,6 +1,6 @@
 {
   "moderator_id": "required|number",
-  "result": "required|number|in:200,300,400",
+  "result": "required|number|in:2,3,4",
   "remarks": "",
   "file_id": ""
 }
