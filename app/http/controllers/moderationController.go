@@ -87,7 +87,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		createModeration["step_total"] = len(transformer["sequence"].([]any))
 		createModeration["is_ordered_items"] = transformer["is_ordered_items"]
 		createModeration["uuid"] = uuid.New().String()
-		createModeration["status"] = 100
+		createModeration["status"] = app_constant.Pending
 
 		if pivotTable["moderation_id"] != nil {
 			moderationCheck := make(map[string]any)
