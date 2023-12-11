@@ -156,7 +156,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 						createModerationSequenceUsers = append(createModerationSequenceUsers, cmu)
 					}
 
-					if err = tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_users")).Create(&createModerationSequenceUsers).Error; err != nil {
+					if err = tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(utils.Pluralize.Singular("user"), utils.Pluralize.Plural("user")))).Create(&createModerationSequenceUsers).Error; err != nil {
 						return err
 					}
 				}
