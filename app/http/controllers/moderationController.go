@@ -40,7 +40,7 @@ func (ctrl *ModerationController) Init(ctx *gin.Context) {
 	ctrl.PluralName = utils.Pluralize.Plural(ctrl.RealName)
 	ctrl.SingularLabel = ctrl.SingularName
 	ctrl.PluralLabel = ctrl.PluralName
-	ctrl.Table = helpers.UsePluralize(ctrl.PluralName, ctrl.SingularName)
+	ctrl.Table = helpers.UsePluralize(ctrl.PluralName, ctrl.RealName)
 	ctrl.ModuleName = config.Data.ModuleName
 	ctrl.ModerationTableSingularName = utils.Pluralize.Singular(config.Data.ModerationTable)
 	ctrl.ModerationTablePluralName = utils.Pluralize.Plural(config.Data.ModerationTable)
