@@ -15,6 +15,7 @@ import (
 
 type ModerationSequenceController struct {
 	PivotModuleName              string
+	RealName                     string
 	SingularName                 string
 	PluralName                   string
 	SingularLabel                string
@@ -34,8 +35,9 @@ type ModerationSequenceController struct {
 
 func (ctrl *ModerationSequenceController) Init(ctx *gin.Context) {
 	ctrl.PivotModuleName = utils.Pluralize.Singular(ctx.Param("prefix"))
-	ctrl.SingularName = utils.Pluralize.Singular(ctx.Param("table"))
-	ctrl.PluralName = utils.Pluralize.Plural(ctx.Param("table"))
+	ctrl.RealName = ctx.Param("table")
+	ctrl.SingularName = utils.Pluralize.Singular(ctrl.RealName)
+	ctrl.PluralName = utils.Pluralize.Plural(ctrl.RealName)
 	ctrl.SingularLabel = ctrl.SingularName
 	ctrl.PluralLabel = ctrl.PluralName
 	ctrl.Table = helpers.UsePluralize(ctrl.PluralLabel, ctrl.SingularLabel)
@@ -43,11 +45,11 @@ func (ctrl *ModerationSequenceController) Init(ctx *gin.Context) {
 	ctrl.ModerationTableSingularName = utils.Pluralize.Singular(config.Data.ModerationTable)
 	ctrl.ModerationTablePluralName = utils.Pluralize.Plural(config.Data.ModerationTable)
 	ctrl.ModerationTableSingularLabel = ctrl.ModerationTableSingularName
-	ctrl.ModerationTable = helpers.UsePluralize(ctrl.ModerationTablePluralName, ctrl.ModerationTableSingularName)
+	ctrl.ModerationTable = helpers.UsePluralize(ctrl.ModerationTablePluralName, config.Data.ModerationTable)
 	ctrl.SequenceSuffixSingularName = utils.Pluralize.Singular(config.Data.SequenceSuffix)
 	ctrl.SequenceSuffixPluralName = utils.Pluralize.Plural(config.Data.SequenceSuffix)
 	ctrl.SequenceSuffixSingularLabel = ctrl.SequenceSuffixSingularName
-	ctrl.SequenceSuffixTable = helpers.UsePluralize(ctrl.SequenceSuffixPluralName, ctrl.SequenceSuffixSingularName)
+	ctrl.SequenceSuffixTable = helpers.UsePluralize(ctrl.SequenceSuffixPluralName, config.Data.SequenceSuffix)
 }
 
 func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
