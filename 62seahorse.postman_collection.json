@@ -82,7 +82,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "// Result Number :\n// 1 = Pending\n// 2 = Pass\n// 3 = Rejected\n// 4 = Revise\n{\n    \"moderator_id\" : 3,\n    \"result\" : 4,\n    \"remarks\": \"okay\",\n    \"file_id\": null\n}\n",
+					"raw": "// Result Number :\n// 1 = Pending\n// 2 = Pass\n// 3 = Rejected\n// 4 = Revise\n// 5 = Pending\n{\n    \"moderator_id\" : 3,\n    \"result\" : 5,\n    \"remarks\": \"pending\",\n    \"file_id\": null\n}\n",
 					"options": {
 						"raw": {
 							"language": "json"
