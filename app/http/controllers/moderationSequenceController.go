@@ -84,7 +84,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 		moderationSequenceUser := make(map[string]any)
 		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(utils.Pluralize.Plural("user"), utils.Pluralize.Singular("user")))).Where("item_id = ?", moderationSequence["id"]).Where("user_id = ?", transformer["moderator_id"]).Take(&moderationSequenceUser).Error; err != nil {
-			return errors.New("moderator is not in this moderation sequence")
+			return errors.New("Moderator is not in this moderation sequence")
 		}
 
 		moderationSequence["is_current"] = false
@@ -99,6 +99,10 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 		if (fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending) && config.Data.UsePending == false && fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1)) || (fmt.Sprintf("%v", moderation["is_ordered_items"]) != fmt.Sprintf("%v", 1) && fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending)) {
 			return errors.New("Pending is not allowed")
+		}
+
+		if fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) && fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending) && fmt.Sprintf("%v", moderationSequence["step"]) == fmt.Sprintf("%v", 1) {
+			return errors.New("This is the first step of moderation, you can't pending this moderation anymore")
 		}
 
 		if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Approve) {
