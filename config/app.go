@@ -16,6 +16,8 @@ type Config struct {
 	ModerationTable   string `mapstructure:"MODERATION_TABLE"`
 	SequenceSuffix    string `mapstructure:"SEQUENCE_SUFFIX"`
 	UsePluralize      bool   `mapstructure:"USE_PLURALIZE"`
+	UsePending        bool   `mapstructure:"USE_PENDING"`
+	RollbackStep      int    `mapstructure:"ROLLBACK_STEP"`
 }
 
 var Data Config
@@ -36,6 +38,8 @@ func LoadConfig(path string, data *Config) (config Config, err error) {
 	viper.SetDefault("MODERATION_TABLE", "moderation")
 	viper.SetDefault("SEQUENCE_SUFFIX", "sequence")
 	viper.SetDefault("USE_PLURALIZE", true)
+	viper.SetDefault("USE_PENDING", true)
+	viper.SetDefault("ROLLBACK_STEP", 1)
 
 	viper.AutomaticEnv()
 

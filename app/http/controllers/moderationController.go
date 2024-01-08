@@ -90,7 +90,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 		createModeration["step_total"] = len(transformer["sequence"].([]any))
 		createModeration["is_ordered_items"] = transformer["is_ordered_items"]
 		createModeration["uuid"] = uuid.New().String()
-		createModeration["status"] = app_constant.Pending
+		createModeration["status"] = app_constant.Waiting
 
 		if pivotTable["moderation_id"] != nil {
 			moderationCheck := make(map[string]any)
@@ -101,7 +101,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 			if moderationCheck["status"] != nil {
 				moderationStatus := fmt.Sprintf("%v", moderationCheck["status"])
 
-				if moderationStatus == fmt.Sprintf("%v", app_constant.Pending) {
+				if moderationStatus == fmt.Sprintf("%v", app_constant.Pending) || moderationStatus == fmt.Sprintf("%v", app_constant.Waiting) {
 					return errors.New("Moderation is already exist")
 				}
 
@@ -129,7 +129,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 			for i, v := range transformer["sequence"].([]any) {
 				createModerationSequence := make(map[string]any)
 				createModerationSequence["moderation_id"] = moderation["id"]
-				createModerationSequence["result"] = app_constant.Pending
+				createModerationSequence["result"] = app_constant.Waiting
 				createModerationSequence["uuid"] = uuid.New().String()
 
 				if fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) {
