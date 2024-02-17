@@ -169,7 +169,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 				}
 			} else {
 				if len(unModeratedSequences) > 0 {
-					if fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) {
+					if fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) && fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Reject) {
 						if err = tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable)).Where("moderation_id = ?", moderation["id"]).Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).Updates(map[string]any{
 							"is_current": true,
 							"result":     app_constant.Waiting,
@@ -181,7 +181,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			}
 		}
 
-		if fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) {
+		if fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) && fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Reject) {
 			moderationSequence["is_current"] = false
 		}
 
