@@ -34,7 +34,7 @@ type ModerationController struct {
 }
 
 func (ctrl *ModerationController) Init(ctx *gin.Context) {
-	ctrl.PivotModuleName = utils.Pluralize.Singular(ctx.Query("prefix"))
+	ctrl.PivotModuleName = ctx.Query("prefix")
 	ctrl.RealName = ctx.Param("table")
 	ctrl.SingularName = utils.Pluralize.Singular(ctrl.RealName)
 	ctrl.PluralName = utils.Pluralize.Plural(ctrl.RealName)
