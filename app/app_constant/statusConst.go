@@ -6,4 +6,5 @@ const (
 	Reject  = 3
 	Revise  = 4
 	Pending = 5
+	Skip    = 6
 )

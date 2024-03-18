@@ -34,7 +34,7 @@ type ModerationSequenceController struct {
 }
 
 func (ctrl *ModerationSequenceController) Init(ctx *gin.Context) {
-	ctrl.PivotModuleName = utils.Pluralize.Singular(ctx.Param("prefix"))
+	// ctrl.PivotModuleName = utils.Pluralize.Singular(ctx.Param("prefix"))
 	ctrl.RealName = ctx.Param("table")
 	ctrl.SingularName = utils.Pluralize.Singular(ctrl.RealName)
 	ctrl.PluralName = utils.Pluralize.Plural(ctrl.RealName)
@@ -62,8 +62,8 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		return
 	}
 
+	// validation
 	input := utils.ParseForm(ctx)
-
 	if validation, err := utils.Validate(input, transformer); err {
 		ctx.JSON(http.StatusBadRequest, utils.ResponseData("error", "validation", validation.Errors))
 		return
@@ -72,70 +72,116 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 	utils.MapValuesShifter(transformer, input)
 	utils.MapNullValuesRemover(transformer)
 
+	// database transaction
 	if err = utils.DB.Transaction(func(tx *gorm.DB) error {
+
+		// mod_moderation_items based on env
 		moderationSequence := make(map[string]any)
-		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable)).Where("id = ?", ctx.Param("id")).Take(&moderationSequence).Error; err != nil {
+		if err := tx.Table(helpers.SetTableName(
+			ctrl.ModuleName,
+			ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+		)).Where("id = ?", ctx.Param("id")). //:moderation_item_id
+							Take(&moderationSequence).
+							Error; err != nil {
 			return err
 		}
 
-		if fmt.Sprintf("%v", moderationSequence["result"]) != fmt.Sprintf("%v", app_constant.Waiting) && fmt.Sprintf("%v", moderationSequence["result"]) != fmt.Sprintf("%v", app_constant.Pending) {
-			return errors.New("Moderation Sequence must be waiting or pending")
+		if fmt.Sprintf("%v", moderationSequence["result"]) != fmt.Sprintf("%v", app_constant.Waiting) &&
+			fmt.Sprintf("%v", moderationSequence["result"]) != fmt.Sprintf("%v", app_constant.Pending) {
+			return errors.New("moderation sequence must be waiting or pending")
 		}
 
+		// mod_moderation_users
 		moderationSequenceUser := make(map[string]any)
-		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(utils.Pluralize.Plural("user"), utils.Pluralize.Singular("user")))).Where("item_id = ?", moderationSequence["id"]).Where("user_id = ?", transformer["moderator_id"]).Take(&moderationSequenceUser).Error; err != nil {
-			return errors.New("Moderator is not in this moderation sequence")
+		if err := tx.Table(helpers.SetTableName(
+			ctrl.ModuleName,
+			ctrl.ModerationTableSingularName+"_"+helpers.UsePluralize(
+				utils.Pluralize.Plural("user"),
+				utils.Pluralize.Singular("user"),
+			),
+		)).Where("item_id = ?", moderationSequence["id"]).
+			Where("user_id = ?", transformer["moderator_id"]).
+			Take(&moderationSequenceUser).
+			Error; err != nil {
+			return errors.New("moderator is not in this moderation sequence")
 		}
 
 		moderationSequence["is_current"] = false
 		moderationSequence["result"] = transformer["result"]
 		moderationSequence["remarks"] = transformer["remarks"]
 		moderationSequence["file_id"] = transformer["file_id"]
+		// moderationSequence["skip_next_approval"] = transformer["skip_next_approval"]
 
+		// mod_moderations
 		moderation := make(map[string]any)
-		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTable)).Where("id = ?", moderationSequence["moderation_id"]).Take(&moderation).Error; err != nil {
+		if err := tx.Table(helpers.SetTableName(
+			ctrl.ModuleName,
+			ctrl.ModerationTable,
+		)).Where("id = ?", moderationSequence["moderation_id"]).
+			Take(&moderation).
+			Error; err != nil {
 			return err
 		}
 
-		if (fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending) && config.Data.UsePending == false && fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1)) || (fmt.Sprintf("%v", moderation["is_ordered_items"]) != fmt.Sprintf("%v", 1) && fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending)) {
-			return errors.New("Pending is not allowed")
+		// if (fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending) && config.Data.UsePending == false && fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1)) || (fmt.Sprintf("%v", moderation["is_ordered_items"]) != fmt.Sprintf("%v", 1) && fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending)) {
+		// 	return errors.New("pending is not allowed")
+		// }
+
+		if !ctrl.canPendingModeration(moderation, transformer) {
+			return errors.New("pending is not allowed")
 		}
 
-		if fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) && fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending) && fmt.Sprintf("%v", moderationSequence["step"]) == fmt.Sprintf("%v", 1) {
-			return errors.New("This is the first step of moderation, you can't pending this moderation anymore")
-		}
+		// if fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) &&
+		// 	fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending) &&
+		// 	fmt.Sprintf("%v", moderationSequence["step"]) == fmt.Sprintf("%v", 1) {
+		// 	return errors.New("this is the first step of moderation, you can't pending this moderation anymore")
+		// }
 
-		if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Approve) {
-			return errors.New("Moderation is already finished")
-		}
+		// if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Approve) {
+		// 	return errors.New("moderation is already finished")
+		// }
 
-		if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Reject) {
-			return errors.New("Moderation is already rejected")
-		}
+		// if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Reject) {
+		// 	return errors.New("moderation is already rejected")
+		// }
 
-		if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Revise) {
-			return errors.New("Moderation is revised")
-		}
+		// if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Revise) {
+		// 	return errors.New("moderation is revised")
+		// }
 
-		if moderation["step_current"] == nil {
-			moderation["step_current"] = 1
-		} else {
-			moderation["step_current"] = utils.ConvertToInt(moderation["step_current"]) + 1
-		}
+		// if moderation["step_current"] == nil {
+		// 	moderation["step_current"] = 1
+		// } else {
+		// 	moderation["step_current"] = utils.ConvertToInt(moderation["step_current"]) + 1
+		// }
 
-		if fmt.Sprintf("%v", moderation["step_current"]) != fmt.Sprintf("%v", moderationSequence["step"]) && fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) {
-			return errors.New("Moderation sequence is not current")
-		}
+		// if fmt.Sprintf("%v", moderation["step_current"]) != fmt.Sprintf("%v", moderationSequence["step"]) &&
+		// 	fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) {
+		// 	return errors.New("moderation sequence is not current")
+		// }
 
-		if fmt.Sprintf("%v", moderation["result"]) == fmt.Sprintf("%v", app_constant.Approve) ||
-			fmt.Sprintf("%v", moderation["result"]) == fmt.Sprintf("%v", app_constant.Reject) {
-			return errors.New("Moderation is already finished")
+		// if fmt.Sprintf("%v", moderation["result"]) == fmt.Sprintf("%v", app_constant.Approve) ||
+		// 	fmt.Sprintf("%v", moderation["result"]) == fmt.Sprintf("%v", app_constant.Reject) {
+		// 	return errors.New("moderation is already finished")
+		// }
+
+		if err := handleModerationErrors(transformer, moderation, moderationSequence); err != nil {
+			return err
 		}
 
 		moderation["last_item_id"] = moderationSequence["id"]
-		unModeratedSequences := make([]map[string]any, 0)
 
-		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable)).Where("moderation_id = ?", moderation["id"]).Where("result = ? or result = ?", app_constant.Waiting, app_constant.Pending).Where("id != ?", moderationSequence["id"]).Find(&unModeratedSequences).Error; err != nil {
+		// mod_moderation_items
+		unModeratedSequences := make([]map[string]any, 0)
+		if err := tx.Table(helpers.SetTableName(
+			ctrl.ModuleName,
+			ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+		)).Where("moderation_id = ?", moderation["id"]).
+			// Where("result = ? or result = ?", app_constant.Waiting, app_constant.Pending).
+			Where("result IN ?", []int{app_constant.Waiting, app_constant.Pending}).
+			Where("id != ?", moderationSequence["id"]).
+			Find(&unModeratedSequences).
+			Error; err != nil {
 			return err
 		}
 
@@ -169,19 +215,116 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 				}
 			} else {
 				if len(unModeratedSequences) > 0 {
-					if fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) && fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Reject) {
-						if err = tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable)).Where("moderation_id = ?", moderation["id"]).Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).Updates(map[string]any{
-							"is_current": true,
-							"result":     app_constant.Waiting,
-						}).Error; err != nil {
-							return err
+					if fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) &&
+						fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Reject) {
+
+						// update mod_moderation_items
+						// Check transformer["skip_next_approval"] for different representations of boolean values
+						skipNextApproval, ok := transformer["skip_next_approval"].(bool)
+						if !ok {
+							// Attempt to parse other representations of boolean values
+							switch transformer["skip_next_approval"] {
+							case "true", "1":
+								skipNextApproval = true
+							case "false", "0":
+								skipNextApproval = false
+							}
+						}
+
+						if skipNextApproval {
+							// skip mod_moderation_items
+							// 	if err = tx.Table(helpers.SetTableName(
+							// 		ctrl.ModuleName,
+							// 		ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+							// 	)).Where("moderation_id = ?", moderation["id"]).
+							// 		Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).
+							// 		Updates(map[string]any{
+							// 			"is_current": false,
+							// 			"result":     app_constant.Skip,
+							// 		}).Error; err != nil {
+							// 		return err
+							// 	}
+							// } else {
+							// 	// update mod_moderation_items to waiting
+							// 	if err = tx.Table(helpers.SetTableName(
+							// 		ctrl.ModuleName,
+							// 		ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+							// 	)).Where("moderation_id = ?", moderation["id"]).
+							// 		Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).
+							// 		Updates(map[string]any{
+							// 			"is_current": true,
+							// 			"result":     app_constant.Waiting,
+							// 		}).Error; err != nil {
+							// 		return err
+							// 	}
+
+							// Update mod_moderation_items to set the current step as Skipped
+							if err = tx.Table(helpers.SetTableName(
+								ctrl.ModuleName,
+								ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+							)).Where("moderation_id = ?", moderation["id"]).
+								Where("step = ?", utils.ConvertToInt(moderationSequence["step"])).
+								Updates(map[string]interface{}{
+									"is_current": false,
+									"result":     app_constant.Skip,
+								}).Error; err != nil {
+								return err
+							}
+
+							// Check if there is a next moderation step
+							var nextStepExists bool
+							if err := tx.Table(helpers.SetTableName(
+								ctrl.ModuleName,
+								ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+							)).Where("moderation_id = ?", moderation["id"]).
+								Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).
+								Take(&map[string]interface{}{}).Error; err != nil {
+								// If no next step exists, mark the current step as Completed
+								if gorm.IsRecordNotFoundError(err) {
+									nextStepExists = false
+								} else {
+									return err
+								}
+							} else {
+								nextStepExists = true
+							}
+
+							// Update mod_moderation_items based on the existence of the next step
+							if nextStepExists {
+								// Set the next step as the current step and mark it as Waiting
+								if err = tx.Table(helpers.SetTableName(
+									ctrl.ModuleName,
+									ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+								)).Where("moderation_id = ?", moderation["id"]).
+									Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).
+									Updates(map[string]interface{}{
+										"is_current": true,
+										"result":     app_constant.Waiting,
+									}).Error; err != nil {
+									return err
+								}
+							} else {
+								// Mark the current step as Completed
+								if err = tx.Table(helpers.SetTableName(
+									ctrl.ModuleName,
+									ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+								)).Where("moderation_id = ?", moderation["id"]).
+									Where("step = ?", utils.ConvertToInt(moderationSequence["step"])).
+									Updates(map[string]interface{}{
+										"is_current": false,
+										"result":     app_constant.Approve,
+									}).Error; err != nil {
+									return err
+								}
+							}
 						}
 					}
 				}
 			}
 		}
 
-		if fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) && fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Reject) {
+		if fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) &&
+			fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Reject) {
 			moderationSequence["is_current"] = false
 		}
 
@@ -197,11 +340,23 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 		moderationSequence["moderator_id"] = transformer["moderator_id"]
 
-		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable)).Where("id = ?", moderationSequence["id"]).Updates(&moderationSequence).Error; err != nil {
+		// update mod_moderation_items
+		if err := tx.Table(helpers.SetTableName(
+			ctrl.ModuleName,
+			ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+		)).Where("id = ?", moderationSequence["id"]).
+			Updates(&moderationSequence).
+			Error; err != nil {
 			return err
 		}
 
-		if err := tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTable)).Where("id = ?", moderation["id"]).Updates(&moderation).Error; err != nil {
+		// update mod_moderations
+		if err := tx.Table(helpers.SetTableName(
+			ctrl.ModuleName,
+			ctrl.ModerationTable,
+		)).Where("id = ?", moderation["id"]).
+			Updates(&moderation).
+			Error; err != nil {
 			return err
 		}
 
@@ -211,7 +366,14 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, utils.ResponseData("success", "create "+ctrl.ModerationTableSingularLabel+" "+ctrl.ModerationTable+" success", transformer))
+	ctx.JSON(
+		http.StatusOK,
+		utils.ResponseData(
+			"success",
+			"create "+ctrl.ModerationTableSingularLabel+" "+ctrl.ModerationTable+" success",
+			transformer,
+		),
+	)
 }
 
 func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
@@ -270,4 +432,59 @@ func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, utils.ResponseData("success", "update "+ctrl.ModerationTableSingularLabel+" "+ctrl.ModerationTable+" success", transformer))
+}
+
+// refatoring
+func (ctrl *ModerationSequenceController) canPendingModeration(moderation map[string]any, transformer map[string]any) bool {
+	isPendingResult := fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending)
+	isOrderedItems := fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1)
+	usePending := config.Data.UsePending
+
+	if isPendingResult && !usePending && isOrderedItems {
+		return false
+	}
+
+	if !isOrderedItems && isPendingResult {
+		return false
+	}
+
+	return true
+}
+
+func handleModerationErrors(transformer map[string]interface{}, moderation map[string]interface{}, moderationSequence map[string]interface{}) error {
+	if fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) &&
+		fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending) &&
+		fmt.Sprintf("%v", moderationSequence["step"]) == fmt.Sprintf("%v", 1) {
+		return errors.New("this is the first step of moderation, you can't pending this moderation anymore")
+	}
+
+	if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Approve) {
+		return errors.New("moderation is already finished")
+	}
+
+	if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Reject) {
+		return errors.New("moderation is already rejected")
+	}
+
+	if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Revise) {
+		return errors.New("moderation is revised")
+	}
+
+	if moderation["step_current"] == nil {
+		moderation["step_current"] = 1
+	} else {
+		moderation["step_current"] = utils.ConvertToInt(moderation["step_current"]) + 1
+	}
+
+	if fmt.Sprintf("%v", moderation["step_current"]) != fmt.Sprintf("%v", moderationSequence["step"]) &&
+		fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1) {
+		return errors.New("moderation sequence is not current")
+	}
+
+	if fmt.Sprintf("%v", moderation["result"]) == fmt.Sprintf("%v", app_constant.Approve) ||
+		fmt.Sprintf("%v", moderation["result"]) == fmt.Sprintf("%v", app_constant.Reject) {
+		return errors.New("moderation is already finished")
+	}
+
+	return nil
 }
