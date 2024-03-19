@@ -185,6 +185,23 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			return err
 		}
 
+		// update mod_moderation_items
+		// Check transformer["skip_next_approval"] for different representations of boolean values
+		skipNextApproval, ok := transformer["skip_next_approval"].(bool)
+		if !ok {
+			// Attempt to parse other representations of boolean values
+			switch transformer["skip_next_approval"] {
+			case "true", "1":
+				skipNextApproval = true
+			case "false", "0":
+				skipNextApproval = false
+			}
+		}
+
+		var nextStepExists bool
+		var nextStepCount int64
+
+		// update mod_moderation_items
 		if fmt.Sprintf("%v", moderation["is_ordered_items"]) != fmt.Sprintf("%v", 1) {
 			moderationSequence["step"] = moderation["step_current"]
 		} else {
@@ -200,17 +217,28 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 					moderation["step_current"] = rollbackTo - 1
 				}
 
-				if err = tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable)).Where("moderation_id = ?", moderation["id"]).Where("step = ?", rollbackTo).Updates(map[string]any{
-					"is_current": true,
-					"result":     app_constant.Waiting,
-				}).Error; err != nil {
+				if err = tx.Table(helpers.SetTableName(
+					ctrl.ModuleName,
+					ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+				)).Where("moderation_id = ?", moderation["id"]).
+					Where("step = ?", rollbackTo).
+					Updates(map[string]any{
+						"is_current": true,
+						"result":     app_constant.Waiting,
+					}).Error; err != nil {
 					return err
 				}
 
-				if err = tx.Table(helpers.SetTableName(ctrl.ModuleName, ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable)).Where("moderation_id = ?", moderation["id"]).Where("step < ?", moderationSequence["step"]).Where("step > ?", rollbackTo).Updates(map[string]any{
-					"is_current": false,
-					"result":     app_constant.Pending,
-				}).Error; err != nil {
+				if err = tx.Table(helpers.SetTableName(
+					ctrl.ModuleName,
+					ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+				)).Where("moderation_id = ?", moderation["id"]).
+					Where("step < ?", moderationSequence["step"]).
+					Where("step > ?", rollbackTo).
+					Updates(map[string]any{
+						"is_current": false,
+						"result":     app_constant.Pending,
+					}).Error; err != nil {
 					return err
 				}
 			} else {
@@ -220,16 +248,16 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 						// update mod_moderation_items
 						// Check transformer["skip_next_approval"] for different representations of boolean values
-						skipNextApproval, ok := transformer["skip_next_approval"].(bool)
-						if !ok {
-							// Attempt to parse other representations of boolean values
-							switch transformer["skip_next_approval"] {
-							case "true", "1":
-								skipNextApproval = true
-							case "false", "0":
-								skipNextApproval = false
-							}
-						}
+						// skipNextApproval, ok := transformer["skip_next_approval"].(bool)
+						// if !ok {
+						// 	// Attempt to parse other representations of boolean values
+						// 	switch transformer["skip_next_approval"] {
+						// 	case "true", "1":
+						// 		skipNextApproval = true
+						// 	case "false", "0":
+						// 		skipNextApproval = false
+						// 	}
+						// }
 
 						if skipNextApproval {
 							// skip mod_moderation_items
@@ -258,12 +286,12 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 							// 		return err
 							// 	}
 
-							// Update mod_moderation_items to set the current step as Skipped
+							// Update next mod_moderation_items to set the current step as Skipped
 							if err = tx.Table(helpers.SetTableName(
 								ctrl.ModuleName,
 								ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
 							)).Where("moderation_id = ?", moderation["id"]).
-								Where("step = ?", utils.ConvertToInt(moderationSequence["step"])).
+								Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).
 								Updates(map[string]interface{}{
 									"is_current": false,
 									"result":     app_constant.Skip,
@@ -272,22 +300,19 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 							}
 
 							// Check if there is a next moderation step
-							var nextStepExists bool
+							// var nextStepExists bool
+							// var nextStepCount int64
 							if err := tx.Table(helpers.SetTableName(
 								ctrl.ModuleName,
 								ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
 							)).Where("moderation_id = ?", moderation["id"]).
-								Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).
-								Take(&map[string]interface{}{}).Error; err != nil {
-								// If no next step exists, mark the current step as Completed
-								if gorm.IsRecordNotFoundError(err) {
-									nextStepExists = false
-								} else {
-									return err
-								}
-							} else {
-								nextStepExists = true
+								// Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+2).
+								Where("step > ?", utils.ConvertToInt(moderationSequence["step"])+2).
+								Count(&nextStepCount).Error; err != nil {
+								return err
 							}
+
+							nextStepExists = nextStepCount > 0
 
 							// Update mod_moderation_items based on the existence of the next step
 							if nextStepExists {
@@ -296,7 +321,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 									ctrl.ModuleName,
 									ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
 								)).Where("moderation_id = ?", moderation["id"]).
-									Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).
+									Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+2).
 									Updates(map[string]interface{}{
 										"is_current": true,
 										"result":     app_constant.Waiting,
@@ -304,18 +329,30 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 									return err
 								}
 							} else {
-								// Mark the current step as Completed
 								if err = tx.Table(helpers.SetTableName(
 									ctrl.ModuleName,
 									ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
 								)).Where("moderation_id = ?", moderation["id"]).
-									Where("step = ?", utils.ConvertToInt(moderationSequence["step"])).
+									Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+2).
 									Updates(map[string]interface{}{
 										"is_current": false,
 										"result":     app_constant.Approve,
 									}).Error; err != nil {
 									return err
 								}
+							}
+						} else {
+							// Update mod_moderation_items to set the next step as the current step
+							if err = tx.Table(helpers.SetTableName(
+								ctrl.ModuleName,
+								ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+							)).Where("moderation_id = ?", moderation["id"]).
+								Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).
+								Updates(map[string]interface{}{
+									"is_current": true,
+									"result":     app_constant.Waiting,
+								}).Error; err != nil {
+								return err
 							}
 						}
 					}
@@ -328,8 +365,15 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			moderationSequence["is_current"] = false
 		}
 
+		//  step - status
+		// 1 approve
+		// 2 skip
+		// 3 approve
+
 		if fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Approve) {
 			if len(unModeratedSequences) == 0 {
+				moderation["status"] = app_constant.Approve
+			} else if !nextStepExists {
 				moderation["status"] = app_constant.Approve
 			} else {
 				moderation["status"] = app_constant.Waiting
@@ -340,7 +384,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 		moderationSequence["moderator_id"] = transformer["moderator_id"]
 
-		// update mod_moderation_items
+		// update current mod_moderation_items
 		if err := tx.Table(helpers.SetTableName(
 			ctrl.ModuleName,
 			ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
