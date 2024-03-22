@@ -165,6 +165,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		}
 
 		var nextRowCount int64
+		isPrevModerationPending := true
 
 		// update mod_moderation_items
 		if fmt.Sprintf("%v", moderation["is_ordered_items"]) != fmt.Sprintf("%v", 1) {
@@ -196,8 +197,9 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 					return err
 				}
 
-				if utils.ConvertToInt(prevResult)  == app_constant.Skip {
+				if utils.ConvertToInt(prevResult) == app_constant.Skip {
 					rollbackTo = rollbackTo - 1
+					isPrevModerationPending = false
 				}
 
 				if rollbackTo == 1 {
@@ -206,6 +208,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 					moderation["step_current"] = rollbackTo - 1
 				}
 
+				// update mod_moderation_items
 				if err = tx.Table(helpers.SetTableName(
 					ctrl.ModuleName,
 					ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
@@ -218,6 +221,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 					return err
 				}
 
+				// update mod_moderation_items
 				if err = tx.Table(helpers.SetTableName(
 					ctrl.ModuleName,
 					ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
@@ -323,14 +327,16 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		}
 
 		// update current mod_moderation_items
-		moderationSequence["moderator_id"] = transformer["moderator_id"]
-		if err := tx.Table(helpers.SetTableName(
-			ctrl.ModuleName,
-			ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
-		)).Where("id = ?", moderationSequence["id"]).
-			Updates(&moderationSequence).
-			Error; err != nil {
-			return err
+		if isPrevModerationPending {
+			moderationSequence["moderator_id"] = transformer["moderator_id"]
+			if err := tx.Table(helpers.SetTableName(
+				ctrl.ModuleName,
+				ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+			)).Where("id = ?", moderationSequence["id"]).
+				Updates(&moderationSequence).
+				Error; err != nil {
+				return err
+			}
 		}
 
 		// update mod_moderations
