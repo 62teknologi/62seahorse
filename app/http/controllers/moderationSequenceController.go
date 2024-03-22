@@ -147,13 +147,34 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		}
 
 		// Check transformer["skip_next_approval"] for different representations of boolean values
+		// skipNextApproval, ok := transformer["skip_next_approval"].(bool)
+		// if !ok {
+		// 	// Attempt to parse other representations of boolean values
+		// 	switch transformer["skip_next_approval"] {
+		// 	case "true", "1":
+		// 		skipNextApproval = true
+		// 	case "false", "0":
+		// 		skipNextApproval = false
+		// 	}
+		// }
+
+		// Check transformer["skip_next_approval"] for different representations of boolean values
 		skipNextApproval, ok := transformer["skip_next_approval"].(bool)
 		if !ok {
 			// Attempt to parse other representations of boolean values
 			switch transformer["skip_next_approval"] {
 			case "true", "1":
-				skipNextApproval = true
+				// skipNextApproval = true
+				if fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Skip) {
+					skipNextApproval = false
+				} else {
+					skipNextApproval = true
+				}
 			case "false", "0":
+				skipNextApproval = false
+			default:
+				// Handle invalid value for transformer["skip_next_approval"]
+				// Misalnya, dengan memberi nilai default false atau mengembalikan error
 				skipNextApproval = false
 			}
 		}
