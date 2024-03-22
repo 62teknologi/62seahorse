@@ -179,6 +179,27 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 					rollbackTo = 1
 				}
 
+				// mod_moderation_items
+				// check jika mod_moderation_items yang mundur satu langkah adalah skip maka rolbackto = 2;
+
+				// mod_moderation_items
+				// check jika mod_moderation_items yang mundur satu langkah adalah skip maka rollbackTo = rollbackTo - 1
+				var prevResult string
+				if err := tx.Table(helpers.SetTableName(
+					ctrl.ModuleName,
+					ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+				)).Where("moderation_id = ?", moderation["id"]).
+					Where("step = ?", rollbackTo).
+					Select("result").
+					Row().
+					Scan(&prevResult); err != nil {
+					return err
+				}
+
+				if utils.ConvertToInt(prevResult)  == app_constant.Skip {
+					rollbackTo = rollbackTo - 1
+				}
+
 				if rollbackTo == 1 {
 					moderation["step_current"] = nil
 				} else {

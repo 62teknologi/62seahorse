@@ -115,7 +115,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "// Result Number :\n// Waiting = 1\n// Approve = 2\n// Reject  = 3\n// Revise  = 4\n// Pending = 5\n// Skip    = 6\n// ex\n// kalau yang laogin sm samsulbahri maka id user nya adlah sebagai berikut\n// role user_id\n// sm 19\n// asm 26\n// spv 88\n// mr 152\n{\n    // \"moderator_id\": 88, // spv\n    // \"moderator_id\": 26, // asm\n    \"moderator_id\": 19, // sm\n    \"result\": 2,\n    \"remarks\": \"percobaan\",\n    \"file_id\": null,\n    \"skip_next_approval\": true //true lewatkah, false lanjutkan, defaulnya false\n}",
+					"raw": "// Result Number :\n// Waiting = 1\n// Approve = 2\n// Reject  = 3\n// Revise  = 4\n// Pending = 5 nilai skip_next_approval wajib false\n// Skip    = 6\n// ex\n// kalau yang laogin sm samsulbahri maka id user nya adlah sebagai berikut\n// role user_id\n// sm 19\n// asm 26\n// spv 88\n// mr 152\n{\n    // \"moderator_id\": 88, // spv\n    // \"moderator_id\": 26, // asm\n    \"moderator_id\": 19, // sm\n    \"result\": 2,\n    \"remarks\": \"percobaan pending\",\n    \"file_id\": null,\n    \"skip_next_approval\": false //true lewatkah, false lanjutkan, defaulnya false\n}",
 					"options": {
 						"raw": {
 							"language": "json"
