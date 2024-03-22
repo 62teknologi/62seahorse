@@ -147,21 +147,8 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		}
 
 		// Check transformer["skip_next_approval"] for different representations of boolean values
-		// skipNextApproval, ok := transformer["skip_next_approval"].(bool)
-		// if !ok {
-		// 	// Attempt to parse other representations of boolean values
-		// 	switch transformer["skip_next_approval"] {
-		// 	case "true", "1":
-		// 		skipNextApproval = true
-		// 	case "false", "0":
-		// 		skipNextApproval = false
-		// 	}
-		// }
-
-		// Check transformer["skip_next_approval"] for different representations of boolean values
 		skipNextApproval, ok := transformer["skip_next_approval"].(bool)
 		if !ok {
-			// Attempt to parse other representations of boolean values
 			switch transformer["skip_next_approval"] {
 			case "true", "1":
 				// skipNextApproval = true
@@ -173,8 +160,6 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			case "false", "0":
 				skipNextApproval = false
 			default:
-				// Handle invalid value for transformer["skip_next_approval"]
-				// Misalnya, dengan memberi nilai default false atau mengembalikan error
 				skipNextApproval = false
 			}
 		}
@@ -188,6 +173,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			if fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending) {
 				// kalau ada skip - 2
 				// kalau ada skip skip lagi ke belakanganya
+				// cek apakah sebelumnya pending. kalau pending lompat ke satu lagi ke belakang
 				rollbackTo := utils.ConvertToInt(moderationSequence["step"]) - config.Data.RollbackStep
 				if rollbackTo < 1 {
 					rollbackTo = 1
