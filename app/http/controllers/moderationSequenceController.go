@@ -146,7 +146,6 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			return err
 		}
 
-		// update mod_moderation_items
 		// Check transformer["skip_next_approval"] for different representations of boolean values
 		skipNextApproval, ok := transformer["skip_next_approval"].(bool)
 		if !ok {
@@ -159,7 +158,6 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			}
 		}
 
-		// var nextStepExists bool
 		var nextRowCount int64
 
 		// update mod_moderation_items
@@ -211,9 +209,6 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 					if skipNextApproval {
 
-						// 1. skip di tengah
-						// 2. skip di akhir
-
 						// Update next mod_moderation_items to set the current step as Skipped
 						if err = tx.Table(helpers.SetTableName(
 							ctrl.ModuleName,
@@ -228,6 +223,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 						}
 
 						// Check if there are rows after the current one
+						// var nextRowCount int64
 						if err := tx.Table(helpers.SetTableName(
 							ctrl.ModuleName,
 							ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
@@ -277,26 +273,29 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			moderationSequence["is_current"] = false
 		}
 
-		//  step - status
-		// 1 approve
-		// 2 skip
-		// 3 approve
-
 		if fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Approve) {
 			if len(unModeratedSequences) == 0 {
 				moderation["status"] = app_constant.Approve
-			} else if nextRowCount == 0 {
-				moderation["status"] = app_constant.Approve
 			} else {
-				moderation["status"] = app_constant.Waiting
+				if skipNextApproval {
+					currentStep := utils.ConvertToInt(moderation["step_current"])
+					totalStep := utils.ConvertToInt(moderation["step_total"])
+
+					if currentStep == totalStep {
+						moderation["status"] = app_constant.Approve
+					} else {
+						moderation["status"] = app_constant.Waiting
+					}
+				} else {
+					moderation["status"] = app_constant.Waiting
+				}
 			}
 		} else {
 			moderation["status"] = moderationSequence["result"]
 		}
 
-		moderationSequence["moderator_id"] = transformer["moderator_id"]
-
 		// update current mod_moderation_items
+		moderationSequence["moderator_id"] = transformer["moderator_id"]
 		if err := tx.Table(helpers.SetTableName(
 			ctrl.ModuleName,
 			ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
@@ -409,7 +408,9 @@ func (ctrl ModerationSequenceController) UpdateModerator(ctx *gin.Context) {
 }
 
 // refactoring
-func (ctrl *ModerationSequenceController) canPendingModeration(moderation map[string]any, transformer map[string]any) bool {
+func (ctrl *ModerationSequenceController) canPendingModeration(
+	moderation map[string]any,
+	transformer map[string]any) bool {
 	isPendingResult := fmt.Sprintf("%v", transformer["result"]) == fmt.Sprintf("%v", app_constant.Pending)
 	isOrderedItems := fmt.Sprintf("%v", moderation["is_ordered_items"]) == fmt.Sprintf("%v", 1)
 	usePending := config.Data.UsePending
@@ -447,10 +448,14 @@ func (ctrl *ModerationSequenceController) handleModerationErrors(
 		return errors.New("moderation is revised")
 	}
 
+	if fmt.Sprintf("%v", moderation["status"]) == fmt.Sprintf("%v", app_constant.Skip) {
+		return errors.New("moderation is Skipped")
+	}
+
 	if moderation["step_current"] == nil {
 		moderation["step_current"] = 1
 	} else {
-		moderation["step_current"] = utils.ConvertToInt(moderation["step_current"]) + 1 //kalau skip tambah 2
+		moderation["step_current"] = utils.ConvertToInt(moderation["step_current"]) + 1
 	}
 
 	if fmt.Sprintf("%v", moderation["step_current"]) != fmt.Sprintf("%v", moderationSequence["step"]) &&
