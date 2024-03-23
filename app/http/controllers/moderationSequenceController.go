@@ -200,6 +200,17 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 				if utils.ConvertToInt(prevResult) == app_constant.Skip {
 					rollbackTo = rollbackTo - 1
 					isPrevModerationPending = false
+
+					if err := tx.Table(helpers.SetTableName(
+						ctrl.ModuleName,
+						ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+					)).Where("id = ?", moderationSequence["id"]).
+						Updates(map[string]any{
+							"is_current": false,
+							"result":     app_constant.Waiting,
+						}).Error; err != nil {
+						return err
+					}
 				}
 
 				if rollbackTo == 1 {
@@ -329,6 +340,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		// update current mod_moderation_items
 		if isPrevModerationPending {
 			moderationSequence["moderator_id"] = transformer["moderator_id"]
+			// moderationSequence["is_current"] = false
 			if err := tx.Table(helpers.SetTableName(
 				ctrl.ModuleName,
 				ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
