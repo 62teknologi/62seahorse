@@ -145,8 +145,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			Error; err != nil {
 			return err
 		}
-
-		// Check transformer["skip_next_approval"] for different representations of boolean values
+		
 		skipNextApproval, ok := transformer["skip_next_approval"].(bool)
 		if !ok {
 			switch transformer["skip_next_approval"] {
@@ -183,7 +182,6 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 				// mod_moderation_items
 				// check jika mod_moderation_items yang mundur satu langkah adalah skip maka rolbackto = 2;
 				// check jika mod_moderation_items yang mundur satu langkah adalah skip maka rollbackTo = rollbackTo - 1
-				// var prevResult string
 				prevModeration := make(map[string]any)
 				if err := tx.Table(helpers.SetTableName(
 					ctrl.ModuleName,
@@ -230,20 +228,6 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 					}).Error; err != nil {
 					return err
 				}
-
-				// update mod_moderation_items
-				// if err = tx.Table(helpers.SetTableName(
-				// 	ctrl.ModuleName,
-				// 	ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
-				// )).Where("moderation_id = ?", moderation["id"]).
-				// 	Where("step < ?", moderationSequence["step"]).
-				// 	Where("step > ?", rollbackTo).
-				// 	Updates(map[string]any{
-				// 		"is_current": false,
-				// 		"result":     app_constant.Pending,
-				// 	}).Error; err != nil {
-				// 	return err
-				// }
 			} else {
 				if len(unModeratedSequences) > 0 &&
 					(fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) &&
