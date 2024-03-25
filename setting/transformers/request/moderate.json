@@ -2,5 +2,6 @@
   "moderator_id": "required|number",
   "result": "required|number|in:2,3,4,5",
   "remarks": "",
-  "file_id": ""
+  "file_id": "",
+  "skip_next_approval": "required|boolean"
 }
