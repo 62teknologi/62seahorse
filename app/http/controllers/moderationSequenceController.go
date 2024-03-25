@@ -183,21 +183,22 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 				// mod_moderation_items
 				// check jika mod_moderation_items yang mundur satu langkah adalah skip maka rolbackto = 2;
 				// check jika mod_moderation_items yang mundur satu langkah adalah skip maka rollbackTo = rollbackTo - 1
-				var prevResult string
+				// var prevResult string
+				prevModeration := make(map[string]any)
 				if err := tx.Table(helpers.SetTableName(
 					ctrl.ModuleName,
 					ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
 				)).Where("moderation_id = ?", moderation["id"]).
 					Where("step = ?", rollbackTo).
-					Select("result").
-					Row().
-					Scan(&prevResult); err != nil {
+					Take(&prevModeration).
+					Error; err != nil {
 					return err
 				}
 
-				if utils.ConvertToInt(prevResult) == app_constant.Skip {
+				if utils.ConvertToInt(prevModeration["result"]) == app_constant.Skip {
 					rollbackTo = rollbackTo - 1
 					isPrevModerationPending = false
+					moderationSequence["resultl"] = app_constant.Skip
 
 					if err := tx.Table(helpers.SetTableName(
 						ctrl.ModuleName,
@@ -205,7 +206,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 					)).Where("id = ?", moderationSequence["id"]).
 						Updates(map[string]any{
 							"is_current": false,
-							"result":     app_constant.Waiting,
+							"result":     app_constant.Pending,
 						}).Error; err != nil {
 						return err
 					}
@@ -231,18 +232,18 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 				}
 
 				// update mod_moderation_items
-				if err = tx.Table(helpers.SetTableName(
-					ctrl.ModuleName,
-					ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
-				)).Where("moderation_id = ?", moderation["id"]).
-					Where("step < ?", moderationSequence["step"]).
-					Where("step > ?", rollbackTo).
-					Updates(map[string]any{
-						"is_current": false,
-						"result":     app_constant.Pending,
-					}).Error; err != nil {
-					return err
-				}
+				// if err = tx.Table(helpers.SetTableName(
+				// 	ctrl.ModuleName,
+				// 	ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+				// )).Where("moderation_id = ?", moderation["id"]).
+				// 	Where("step < ?", moderationSequence["step"]).
+				// 	Where("step > ?", rollbackTo).
+				// 	Updates(map[string]any{
+				// 		"is_current": false,
+				// 		"result":     app_constant.Pending,
+				// 	}).Error; err != nil {
+				// 	return err
+				// }
 			} else {
 				if len(unModeratedSequences) > 0 &&
 					(fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) &&
