@@ -205,6 +205,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 						ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
 					)).Where("id = ?", moderationSequence["id"]).
 						Updates(map[string]any{
+							"moderator_id": nil,
 							"is_current": false,
 							"result":     app_constant.Pending,
 						}).Error; err != nil {
