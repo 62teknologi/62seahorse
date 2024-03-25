@@ -182,8 +182,6 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 				// mod_moderation_items
 				// check jika mod_moderation_items yang mundur satu langkah adalah skip maka rolbackto = 2;
-
-				// mod_moderation_items
 				// check jika mod_moderation_items yang mundur satu langkah adalah skip maka rollbackTo = rollbackTo - 1
 				var prevResult string
 				if err := tx.Table(helpers.SetTableName(
