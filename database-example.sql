@@ -44,7 +44,7 @@ CREATE TABLE `ai_expense_moderations` (
 
 LOCK TABLES `ai_expense_moderations` WRITE;
 /*!40000 ALTER TABLE `ai_expense_moderations` DISABLE KEYS */;
-INSERT INTO `ai_expense_moderations` VALUES (1,1,1,NULL,'2023-12-11 02:52:33','2023-12-11 02:52:33');
+-- INSERT INTO `ai_expense_moderations` VALUES (1,1,1,NULL,'2023-12-11 02:52:33','2023-12-11 02:52:33');
 /*!40000 ALTER TABLE `ai_expense_moderations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -77,7 +77,7 @@ CREATE TABLE `mod_moderation_users` (
 
 LOCK TABLES `mod_moderation_users` WRITE;
 /*!40000 ALTER TABLE `mod_moderation_users` DISABLE KEYS */;
-INSERT INTO `mod_moderation_users` VALUES (1,2,1),(2,3,1),(2,4,1),(2,5,1),(3,4,1),(3,2,1),(3,3,1);
+-- INSERT INTO `mod_moderation_users` VALUES (1,2,1),(2,3,1),(2,4,1),(2,5,1),(3,4,1),(3,2,1),(3,3,1);
 /*!40000 ALTER TABLE `mod_moderation_users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -115,7 +115,7 @@ CREATE TABLE `mod_moderation_items` (
 
 LOCK TABLES `mod_moderation_items` WRITE;
 /*!40000 ALTER TABLE `mod_moderation_items` DISABLE KEYS */;
-INSERT INTO `mod_moderation_items` VALUES (1,1,2,4,1,NULL,'okay',NULL,0,'2023-12-11 02:52:33','2023-12-11 02:52:33','9aed45af-93d6-4310-8d1e-6662f178eb4f'),(2,1,NULL,1,NULL,NULL,NULL,NULL,0,'2023-12-11 02:52:33','2023-12-11 02:52:33','fe25dfee-d43c-4be7-8a89-c4bffc03e795'),(3,1,NULL,1,NULL,NULL,NULL,NULL,0,'2023-12-11 02:52:33','2023-12-11 02:52:33','9ef8c7c9-c9a1-4eff-956a-1b9cc159bdcd');
+-- INSERT INTO `mod_moderation_items` VALUES (1,1,2,4,1,NULL,'okay',NULL,0,'2023-12-11 02:52:33','2023-12-11 02:52:33','9aed45af-93d6-4310-8d1e-6662f178eb4f'),(2,1,NULL,1,NULL,NULL,NULL,NULL,0,'2023-12-11 02:52:33','2023-12-11 02:52:33','fe25dfee-d43c-4be7-8a89-c4bffc03e795'),(3,1,NULL,1,NULL,NULL,NULL,NULL,0,'2023-12-11 02:52:33','2023-12-11 02:52:33','9ef8c7c9-c9a1-4eff-956a-1b9cc159bdcd');
 /*!40000 ALTER TABLE `mod_moderation_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -139,7 +139,14 @@ CREATE TABLE `ai_expenses` (
 
 LOCK TABLES `ai_expenses` WRITE;
 /*!40000 ALTER TABLE `ai_expenses` DISABLE KEYS */;
-INSERT INTO `ai_expenses` VALUES (1,'thami'),(2,'kusuma');
+INSERT INTO `ai_expenses` VALUES 
+  (1,'thami'),
+  (2,'kusuma'),
+  (3, 'perjalanan dinas'),
+  (4, 'entertainment'),
+  (5, 'restaurant'),
+  (6, 'akomodasi'),
+  (7, 'transportasi');
 /*!40000 ALTER TABLE `ai_expenses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -179,7 +186,7 @@ CREATE TABLE `mod_moderations` (
 
 LOCK TABLES `mod_moderations` WRITE;
 /*!40000 ALTER TABLE `mod_moderations` DISABLE KEYS */;
-INSERT INTO `mod_moderations` VALUES (1,NULL,1,1,1,3,NULL,NULL,0,NULL,4,'2023-12-11 02:52:33','2023-12-11 02:52:33','f6477254-33c8-4577-b309-8e4a06fb04a3');
+-- INSERT INTO `mod_moderations` VALUES (1,NULL,1,1,1,3,NULL,NULL,0,NULL,4,'2023-12-11 02:52:33','2023-12-11 02:52:33','f6477254-33c8-4577-b309-8e4a06fb04a3');
 /*!40000 ALTER TABLE `mod_moderations` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
