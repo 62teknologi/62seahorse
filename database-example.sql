@@ -34,7 +34,7 @@ CREATE TABLE `ai_expense_moderations` (
   `deleted_by` bigint(20) unsigned DEFAULT NULL,
   `moderation_id` bigint(20) unsigned DEFAULT NULL,
   `expense_id` bigint(20) unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -67,7 +67,7 @@ CREATE TABLE `mod_moderation_users` (
   `item_id` bigint(20) unsigned DEFAULT NULL,
   `user_id` bigint(20) unsigned DEFAULT NULL,
   `moderation_id` bigint(20) unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=487 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -105,7 +105,7 @@ CREATE TABLE `mod_moderation_items` (
   `remarks` varchar(2000) DEFAULT NULL,
   `file_id` bigint(20) unsigned DEFAULT NULL,
   `is_current` tinyint(1) DEFAULT 0,
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=487 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -169,7 +169,7 @@ CREATE TABLE `mod_moderations` (
   `is_ordered_items` tinyint(1) NOT NULL DEFAULT 0,
   `is_extendable` tinyint(1) NOT NULL DEFAULT 0,
   `status` tinyint(4) DEFAULT 0 COMMENT 'approve, pending, revise, reject',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=127 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
