@@ -57,9 +57,6 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 	ctrl.Init(ctx)
 
 	transformer, err := utils.JsonFileParser(config.Data.SettingPath + "/transformers/request/moderate.json")
-	currentTime := time.Now().Local().UTC()
-	formattedTime := currentTime.Format("2006-01-02 15:04:05.000")
-	userId := transformer["moderator_id"]
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ResponseData("error", err.Error(), nil))
@@ -75,6 +72,13 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 	utils.MapValuesShifter(transformer, input)
 	utils.MapNullValuesRemover(transformer)
+
+	currentTime := time.Now().Local().UTC()
+	formattedTime := currentTime.Format("2006-01-02 15:04:05.000")
+	userId := transformer["moderator_id"]
+	// userIdAny := transformer["moderator_id"]
+	// userIdStr, _ := userIdAny.(string)
+	// userId, _ := strconv.Atoi(userIdStr)
 
 	// database transaction
 	if err = utils.DB.Transaction(func(tx *gorm.DB) error {
@@ -253,8 +257,8 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 								"moderator_id": nil,
 								"is_current":   false,
 								"result":       app_constant.Skip,
-								"updated_by": userId,
-								"updated_at": formattedTime,
+								"updated_by":   userId,
+								"updated_at":   formattedTime,
 							}).Error; err != nil {
 							return err
 						}
@@ -354,7 +358,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 		moderation["updated_by"] = userId
 		moderation["updated_at"] = formattedTime
-		
+
 		// update mod_moderations
 		if err := tx.Table(helpers.SetTableName(
 			ctrl.ModuleName,
