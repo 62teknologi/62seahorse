@@ -227,6 +227,10 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 
 		createPivot := make(map[string]any)
 		createPivot["moderation_id"] = moderation["id"]
+		createPivot["created_at"] = formattedTime
+		createPivot["updated_at"] = formattedTime
+		createPivot["created_by"] = userId
+		createPivot["updated_by"] = userId
 		createPivot[ctrl.SingularLabel+"_id"] = transformer["ref_id"]
 
 		// crete pivot_table_moderation
