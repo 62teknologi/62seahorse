@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/62teknologi/62seahorse/62golib/utils"
 	"github.com/62teknologi/62seahorse/app/app_constant"
@@ -71,6 +72,13 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 
 	utils.MapValuesShifter(transformer, input)
 	utils.MapNullValuesRemover(transformer)
+
+	currentTime := time.Now().Local().UTC()
+	formattedTime := currentTime.Format("2006-01-02 15:04:05.000")
+	userId := transformer["moderator_id"]
+	// userIdAny := transformer["moderator_id"]
+	// userIdStr, _ := userIdAny.(string)
+	// userId, _ := strconv.Atoi(userIdStr)
 
 	// database transaction
 	if err = utils.DB.Transaction(func(tx *gorm.DB) error {
@@ -145,7 +153,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 			Error; err != nil {
 			return err
 		}
-		
+
 		skipNextApproval, ok := transformer["skip_next_approval"].(bool)
 		if !ok {
 			switch transformer["skip_next_approval"] {
@@ -205,6 +213,8 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 						Updates(map[string]any{
 							"is_current": false,
 							"result":     app_constant.Pending,
+							"updated_at": formattedTime,
+							"updated_by": userId,
 						}).Error; err != nil {
 						return err
 					}
@@ -225,6 +235,8 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 					Updates(map[string]any{
 						"is_current": true,
 						"result":     app_constant.Waiting,
+						"updated_by": userId,
+						"updated_at": formattedTime,
 					}).Error; err != nil {
 					return err
 				}
@@ -243,8 +255,10 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 							Where("step = ?", utils.ConvertToInt(moderationSequence["step"])+1).
 							Updates(map[string]interface{}{
 								"moderator_id": nil,
-								"is_current": false,
-								"result":     app_constant.Skip,
+								"is_current":   false,
+								"result":       app_constant.Skip,
+								"updated_by":   userId,
+								"updated_at":   formattedTime,
 							}).Error; err != nil {
 							return err
 						}
@@ -270,6 +284,8 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 								Updates(map[string]interface{}{
 									"is_current": true,
 									"result":     app_constant.Waiting,
+									"updated_at": formattedTime,
+									"updated_by": userId,
 								}).Error; err != nil {
 								return err
 							}
@@ -287,6 +303,8 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 							Updates(map[string]interface{}{
 								"is_current": true,
 								"result":     app_constant.Waiting,
+								"updated_by": userId,
+								"updated_at": formattedTime,
 							}).Error; err != nil {
 							return err
 						}
@@ -324,7 +342,10 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 		// update current mod_moderation_items
 		if isPrevModerationPending {
 			moderationSequence["moderator_id"] = transformer["moderator_id"]
+			moderationSequence["updated_by"] = userId
+			moderationSequence["updated_at"] = formattedTime
 			// moderationSequence["is_current"] = false
+
 			if err := tx.Table(helpers.SetTableName(
 				ctrl.ModuleName,
 				ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
@@ -334,6 +355,9 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 				return err
 			}
 		}
+
+		moderation["updated_by"] = userId
+		moderation["updated_at"] = formattedTime
 
 		// update mod_moderations
 		if err := tx.Table(helpers.SetTableName(
