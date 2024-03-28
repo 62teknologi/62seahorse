@@ -193,7 +193,7 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 					tx.Table(helpers.SetTableName(
 						ctrl.ModuleName,
 						ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable)).
-						Where(createModerationSequence).
+						Where("uuid = ?", createModerationSequence["uuid"]).
 						Take(&moderationSequence)
 
 					createModerationSequenceUsers := []map[string]any{}
@@ -204,8 +204,8 @@ func (ctrl ModerationController) Create(ctx *gin.Context) {
 							"item_id":       moderationSequence["id"],
 							"moderation_id": moderation["id"],
 							"user_id":       w,
-							"created_by": userId,
-							"updated_by": userId,
+							"created_by":    userId,
+							"updated_by":    userId,
 						}
 
 						createModerationSequenceUsers = append(createModerationSequenceUsers, cmu)
