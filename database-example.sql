@@ -99,6 +99,7 @@ CREATE TABLE `mod_moderation_items` (
   `deleted_by` bigint(20) unsigned DEFAULT NULL,
   `moderation_id` bigint(20) unsigned DEFAULT NULL,
   `moderator_id` bigint(20) unsigned DEFAULT NULL,
+  `skipped_by` bigint(20) unsigned DEFAULT NULL,
   `result` tinyint(4) DEFAULT NULL COMMENT 'approve, pending, revise, reject',
   `step` tinyint(4) DEFAULT NULL,
   `set` tinyint(4) DEFAULT NULL,

@@ -256,6 +256,7 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 							Updates(map[string]interface{}{
 								"moderator_id": nil,
 								"is_current":   false,
+								"skipped_by":   userId,
 								"result":       app_constant.Skip,
 								"updated_by":   userId,
 								"updated_at":   formattedTime,
