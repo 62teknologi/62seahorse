@@ -240,6 +240,24 @@ func (ctrl ModerationSequenceController) Moderate(ctx *gin.Context) {
 					}).Error; err != nil {
 					return err
 				}
+
+				// update skipped_by to null
+				stepCurrent := utils.ConvertToInt(moderationSequence["step"])
+				if err := tx.Table(helpers.SetTableName(
+					ctrl.ModuleName,
+					ctrl.ModerationTableSingularName+"_"+ctrl.SequenceSuffixTable,
+				)).Where("moderation_id = ?", moderation["id"]).
+					Where("step > ?", rollbackTo).
+					Where("step < ?", stepCurrent).
+					Where("result = ?", app_constant.Skip).
+					Updates(map[string]any{
+						"skipped_by": nil,
+						"updated_at": formattedTime,
+						"updated_by": userId,
+					}).Error; err != nil {
+					return err
+				}
+
 			} else {
 				if len(unModeratedSequences) > 0 &&
 					(fmt.Sprintf("%v", transformer["result"]) != fmt.Sprintf("%v", app_constant.Revise) &&
